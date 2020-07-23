@@ -80,10 +80,15 @@ class _ChartState extends State<Chart> with TickerProviderStateMixin {
   AnimationController _loadingAnimationController;
   AnimationController _topBoundQuoteAnimationController;
   AnimationController _bottomBoundQuoteAnimationController;
+  AnimationController _rightEpochAnimationController;
   Animation _currentTickAnimation;
   Animation _currentTickBlinkAnimation;
 
   bool get _shouldAutoPan => rightBoundEpoch > nowEpoch;
+
+  bool get _arrowButtonBeVisible =>
+      !_shouldAutoPan &&
+      !(_rightEpochAnimationController?.isAnimating ?? false);
 
   double get _topBoundQuote => _topBoundQuoteAnimationController.value;
 
@@ -129,7 +134,7 @@ class _ChartState extends State<Chart> with TickerProviderStateMixin {
 
     if (oldGranularity != newGranularity) {
       msPerPx = _getDefaultScale(newGranularity);
-      _scrollToNow();
+      rightBoundEpoch = nowEpoch + _pxToMs(maxCurrentTickOffset);
     } else {
       _onNewTick();
     }
@@ -137,11 +142,12 @@ class _ChartState extends State<Chart> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    _currentTickAnimationController.dispose();
-    _currentTickBlinkingController.dispose();
-    _loadingAnimationController.dispose();
-    _topBoundQuoteAnimationController.dispose();
-    _bottomBoundQuoteAnimationController.dispose();
+    _rightEpochAnimationController?.dispose();
+    _currentTickAnimationController?.dispose();
+    _currentTickBlinkingController?.dispose();
+    _loadingAnimationController?.dispose();
+    _topBoundQuoteAnimationController?.dispose();
+    _bottomBoundQuoteAnimationController?.dispose();
     super.dispose();
   }
 
@@ -170,6 +176,16 @@ class _ChartState extends State<Chart> with TickerProviderStateMixin {
     _setupCurrentTickAnimation();
     _setupBlinkingAnimation();
     _setupBoundsAnimation();
+    _setupRightEpochAnimation();
+  }
+
+  void _setupRightEpochAnimation() {
+    _rightEpochAnimationController = AnimationController.unbounded(
+      vsync: this,
+      value: rightBoundEpoch.toDouble(),
+    )..addListener(() {
+        rightBoundEpoch = _rightEpochAnimationController.value.toInt();
+      });
   }
 
   void _setupCurrentTickAnimation() {
@@ -333,7 +349,7 @@ class _ChartState extends State<Chart> with TickerProviderStateMixin {
             );
           }),
         ),
-        if (!_shouldAutoPan)
+        if (_arrowButtonBeVisible)
           Positioned(
             bottom: 30 + timeLabelsAreaHeight,
             right: 30 + quoteLabelsAreaWidth,
@@ -447,7 +463,20 @@ class _ChartState extends State<Chart> with TickerProviderStateMixin {
   }
 
   void _scrollToNow() {
-    rightBoundEpoch = nowEpoch + _pxToMs(maxCurrentTickOffset);
+    final animationMsDuration = 600;
+    final lowerBound = rightBoundEpoch.toDouble();
+    final upperBound = nowEpoch +
+        _pxToMs(maxCurrentTickOffset).toDouble() +
+        animationMsDuration;
+
+    if (upperBound > lowerBound) {
+      _rightEpochAnimationController.value = lowerBound;
+      _rightEpochAnimationController.animateTo(
+        upperBound,
+        curve: Curves.easeOut,
+        duration: Duration(milliseconds: animationMsDuration),
+      );
+    }
   }
 
   void _onScaleAndPanEnd(ScaleEndDetails details) {
