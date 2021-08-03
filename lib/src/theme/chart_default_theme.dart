@@ -2,6 +2,7 @@
 
 import 'package:deriv_chart/deriv_chart.dart';
 import 'package:deriv_chart/src/theme/chart_theme.dart';
+import 'package:deriv_chart/src/theme/painting_styles/bar_style.dart';
 import 'package:flutter/material.dart';
 
 import 'colors.dart';
@@ -91,10 +92,7 @@ abstract class ChartDefaultTheme implements ChartTheme {
   @override
   HorizontalBarrierStyle get currentTickStyle => HorizontalBarrierStyle(
         color: brandCoralColor,
-        textStyle: textStyle(
-          textStyle: caption2,
-          color: base01Color,
-        ),
+        textStyle: textStyle(textStyle: caption2, color: base01Color),
       );
 
   @override
@@ -102,6 +100,12 @@ abstract class ChartDefaultTheme implements ChartTheme {
         positiveColor: accentGreenColor,
         negativeColor: accentRedColor,
         lineColor: base04Color,
+      );
+
+  @override
+  BarStyle get barStyle => BarStyle(
+        positiveColor: accentGreenColor,
+        negativeColor: accentRedColor,
       );
 
   @override
@@ -128,26 +132,22 @@ abstract class ChartDefaultTheme implements ChartTheme {
       );
 
   TextStyle _getStyle({
-    @required TextStyle textStyle,
-    @required Color color,
+    required TextStyle textStyle,
+    required Color color,
   }) {
-    ArgumentError.checkNotNull(textStyle, 'textStyle');
-    ArgumentError.checkNotNull(color, 'color');
-
     _textStyle.putIfAbsent(textStyle, () => <Color, TextStyle>{});
-    _textStyle[textStyle]
+    _textStyle[textStyle]!
         .putIfAbsent(color, () => textStyle.copyWith(color: color));
 
-    return _textStyle[textStyle][color];
+    // We already did put `_textStyle[textStyle][color]` if they were absent. So using `!` is safe.
+    return _textStyle[textStyle]![color]!;
   }
 
   @override
   TextStyle textStyle({
-    @required TextStyle textStyle,
-    Color color,
+    required TextStyle textStyle,
+    Color? color,
   }) {
-    ArgumentError.checkNotNull(textStyle, 'textStyle');
-
     color ??= DarkThemeColors.base01;
 
     return _getStyle(textStyle: textStyle, color: color);

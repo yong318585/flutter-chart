@@ -1,5 +1,6 @@
 import 'package:deriv_chart/src/theme/chart_theme.dart';
 import 'package:deriv_chart/src/models/candle.dart';
+import 'package:deriv_chart/src/theme/painting_styles/barrier_style.dart';
 import 'package:deriv_chart/src/theme/painting_styles/candle_style.dart';
 import 'package:flutter/material.dart';
 
@@ -11,8 +12,14 @@ abstract class OHLCTypeSeries extends DataSeries<Candle> {
   OHLCTypeSeries(
     List<Candle> entries,
     String id, {
-    CandleStyle style,
-  }) : super(entries, id, style: style);
+    CandleStyle? style,
+    HorizontalBarrierStyle? lastTickIndicatorStyle,
+  }) : super(
+          entries,
+          id: id,
+          style: style,
+          lastTickIndicatorStyle: lastTickIndicatorStyle,
+        );
 
   @override
   Widget getCrossHairInfo(

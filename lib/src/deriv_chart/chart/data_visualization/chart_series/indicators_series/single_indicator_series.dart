@@ -1,7 +1,7 @@
 import 'package:deriv_chart/src/models/tick.dart';
+import 'package:deriv_chart/src/theme/painting_styles/barrier_style.dart';
 import 'package:deriv_technical_analysis/deriv_technical_analysis.dart';
 import 'package:deriv_chart/src/theme/painting_styles/data_series_style.dart';
-import 'package:flutter/foundation.dart';
 
 import '../data_painter.dart';
 import '../data_series.dart';
@@ -11,7 +11,7 @@ import 'abstract_single_indicator_series.dart';
 import 'models/indicator_options.dart';
 
 /// Function to get a [DataPainter] object to paint the data.
-typedef DataPainterCreator = DataPainter<DataSeries<Tick>> Function(
+typedef DataPainterCreator = DataPainter<DataSeries<Tick>>? Function(
   Series series,
 );
 
@@ -30,15 +30,25 @@ class SingleIndicatorSeries extends AbstractSingleIndicatorSeries {
   ///                   will calculate the its results on.
   /// [options]         The options of indicator.
   /// [offset]          The offset of this indicator. Shift indicator's data by this number forward/backward.
+  /// [lastTickIndicatorStyle] The style of the last tick indicator. If not set there will be no
+  ///                   last tick indicator.
   SingleIndicatorSeries({
-    @required this.painterCreator,
-    @required this.indicatorCreator,
-    @required Indicator<Tick> inputIndicator,
-    IndicatorOptions options,
-    String id,
-    DataSeriesStyle style,
+    required this.painterCreator,
+    required this.indicatorCreator,
+    required Indicator<Tick> inputIndicator,
+    IndicatorOptions? options,
+    String? id,
+    DataSeriesStyle? style,
     int offset = 0,
-  }) : super(inputIndicator, id, options, style: style, offset: offset);
+    HorizontalBarrierStyle? lastTickIndicatorStyle,
+  }) : super(
+          inputIndicator,
+          id ?? '$options',
+          options: options,
+          style: style,
+          offset: offset,
+          lastTickIndicatorStyle: lastTickIndicatorStyle,
+        );
 
   /// Function which will be called to get the painter object of this class.
   final DataPainterCreator painterCreator;
@@ -47,8 +57,8 @@ class SingleIndicatorSeries extends AbstractSingleIndicatorSeries {
   final CachedIndicator<Tick> Function() indicatorCreator;
 
   @override
-  SeriesPainter<Series> createPainter() => painterCreator?.call(this);
+  SeriesPainter<Series>? createPainter() => painterCreator(this);
 
   @override
-  CachedIndicator<Tick> initializeIndicator() => indicatorCreator?.call();
+  CachedIndicator<Tick> initializeIndicator() => indicatorCreator();
 }

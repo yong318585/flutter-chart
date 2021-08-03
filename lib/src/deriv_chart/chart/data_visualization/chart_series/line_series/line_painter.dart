@@ -17,8 +17,6 @@ class LinePainter extends DataPainter<DataSeries<Tick>> {
     DataSeries<Tick> series,
   ) : super(series);
 
-  double _lastVisibleTickX;
-
   @override
   void onPaintData(
     Canvas canvas,
@@ -27,27 +25,38 @@ class LinePainter extends DataPainter<DataSeries<Tick>> {
     QuoteToY quoteToY,
     AnimationInfo animationInfo,
   ) {
-    final LineStyle style =
-        series.style ?? theme.lineStyle ?? const LineStyle();
+    final LineStyle style = series.style as LineStyle? ?? theme.lineStyle;
 
     final Paint linePaint = Paint()
       ..color = style.color
       ..style = PaintingStyle.stroke
       ..strokeWidth = style.thickness;
 
-    final Path path = createPath(epochToX, quoteToY, animationInfo);
+    final DataLinePathInfo path = createPath(epochToX, quoteToY, animationInfo);
 
-    paintLines(canvas, path, linePaint);
+    paintLines(canvas, path.path, linePaint);
 
     if (style.hasArea) {
-      _drawArea(
+      final Paint areaPaint = Paint()
+        ..style = PaintingStyle.fill
+        ..shader = ui.Gradient.linear(
+          const Offset(0, 0),
+          Offset(0, size.height),
+          <Color>[
+            style.color.withOpacity(0.2),
+            style.color.withOpacity(0.01),
+          ],
+        );
+
+      addAreaPath(
         canvas,
         size,
-        path,
-        epochToX(series.visibleEntries.first.epoch),
-        _lastVisibleTickX,
-        style,
+        path.path,
+        path.startPosition.dx,
+        path.endPosition.dx,
       );
+
+      canvas.drawPath(path.path, areaPaint);
     }
   }
 
@@ -62,105 +71,122 @@ class LinePainter extends DataPainter<DataSeries<Tick>> {
   }
 
   /// Creates the path of the given [series] and returns it.
-  Path createPath(
+  DataLinePathInfo createPath(
     EpochToX epochToX,
     QuoteToY quoteToY,
     AnimationInfo animationInfo,
   ) {
     final Path path = Path();
 
-    double lastVisibleTickX;
-    bool isStartPointSet = false;
+    if (series.entries == null) {
+      return DataLinePathInfo(path, Offset.zero, Offset.zero);
+    }
+
+    Offset? startPosition, endPosition;
 
     // Adding visible entries line to the path except the last which might be animated.
     for (int i = series.visibleEntries.startIndex;
         i < series.visibleEntries.endIndex - 1;
         i++) {
-      final Tick tick = series.entries[i];
+      final Tick tick = series.entries![i];
 
       if (!tick.quote.isNaN) {
-        lastVisibleTickX = epochToX(getEpochOf(tick, i));
+        endPosition =
+            Offset(epochToX(getEpochOf(tick, i)), quoteToY(tick.quote));
 
-        if (!isStartPointSet) {
-          isStartPointSet = true;
-          path.moveTo(
-            lastVisibleTickX,
-            quoteToY(tick.quote),
-          );
+        if (startPosition == null) {
+          startPosition = endPosition;
+          path.moveTo(startPosition.dx, startPosition.dy);
           continue;
         }
 
-        final double y = quoteToY(tick.quote);
-        path.lineTo(lastVisibleTickX, y);
+        path.lineTo(endPosition.dx, endPosition.dy);
       }
     }
 
-    _lastVisibleTickX =
-        calculateLastVisibleTick(epochToX, animationInfo, quoteToY, path);
+    endPosition = _addLastVisibleTick(epochToX, animationInfo, quoteToY, path);
 
-    return path;
+    return startPosition != null && endPosition != null
+        ? DataLinePathInfo(path, startPosition, endPosition)
+        : DataLinePathInfo(path, Offset.zero, Offset.zero);
   }
 
-  /// calculates the last visible tick's `dx`.
-  double calculateLastVisibleTick(EpochToX epochToX,
-      AnimationInfo animationInfo, QuoteToY quoteToY, ui.Path path) {
-    final Tick lastTick = series.entries.last;
+  /// Adds the line to the last visible tick's position regarding the
+  /// [animationInfo.currentTickPercent] animation.
+  ///
+  /// Returns the position of the last visible tick.
+  Offset? _addLastVisibleTick(
+    EpochToX epochToX,
+    AnimationInfo animationInfo,
+    QuoteToY quoteToY,
+    ui.Path path,
+  ) {
+    final Tick lastTick = series.entries!.last;
     final Tick lastVisibleTick = series.visibleEntries.last;
-    double lastVisibleTickX;
+    late Offset lastVisibleTickPosition;
 
     if (!lastVisibleTick.quote.isNaN) {
       if (lastTick == lastVisibleTick && series.prevLastEntry != null) {
-        lastVisibleTickX = ui.lerpDouble(
+        final double tickX = ui.lerpDouble(
           epochToX(
-            getEpochOf(series.prevLastEntry.entry, series.prevLastEntry.index),
+            getEpochOf(
+                series.prevLastEntry!.entry, series.prevLastEntry!.index),
           ),
-          epochToX(getEpochOf(lastTick, series.entries.length - 1)),
+          epochToX(getEpochOf(lastTick, series.entries!.length - 1)),
           animationInfo.currentTickPercent,
-        );
+        )!;
 
         final double tickY = quoteToY(ui.lerpDouble(
-          series.prevLastEntry.entry.quote,
+          series.prevLastEntry!.entry.quote,
           lastTick.quote,
           animationInfo.currentTickPercent,
-        ));
+        )!);
 
-        path.lineTo(lastVisibleTickX, tickY);
+        lastVisibleTickPosition = Offset(tickX, tickY);
+
+        path.lineTo(lastVisibleTickPosition.dx, lastVisibleTickPosition.dy);
       } else {
-        lastVisibleTickX = epochToX(
-            getEpochOf(lastVisibleTick, series.visibleEntries.endIndex - 1));
-        path.lineTo(lastVisibleTickX, quoteToY(lastVisibleTick.quote));
+        lastVisibleTickPosition = Offset(
+          epochToX(
+              getEpochOf(lastVisibleTick, series.visibleEntries.endIndex - 1)),
+          quoteToY(lastVisibleTick.quote),
+        );
+        path.lineTo(lastVisibleTickPosition.dx, lastVisibleTickPosition.dy);
       }
     }
 
-    return lastVisibleTickX;
+    return lastVisibleTickPosition;
   }
+}
 
-  void _drawArea(
-    Canvas canvas,
-    Size size,
-    Path linePath,
-    double lineStartX,
-    double lineEndX,
-    LineStyle style,
-  ) {
-    final Paint areaPaint = Paint()
-      ..style = PaintingStyle.fill
-      ..shader = ui.Gradient.linear(
-        const Offset(0, 0),
-        Offset(0, size.height),
-        <Color>[
-          style.color.withOpacity(0.2),
-          style.color.withOpacity(0.01),
-        ],
-      );
+/// Returns the area paint of the given [Path].
+void addAreaPath(
+  Canvas canvas,
+  Size size,
+  Path linePath,
+  double lineStartX,
+  double lineEndX,
+) {
+  linePath
+    ..lineTo(
+      lineEndX,
+      size.height,
+    )
+    ..lineTo(lineStartX, size.height);
+  return;
+}
 
-    linePath
-      ..lineTo(
-        lineEndX,
-        size.height,
-      )
-      ..lineTo(lineStartX, size.height);
+/// A class for holding the information of a [DataSeries] line path.
+class DataLinePathInfo {
+  /// Initializes.
+  DataLinePathInfo(this.path, this.startPosition, this.endPosition);
 
-    canvas.drawPath(linePath, areaPaint);
-  }
+  /// The path of the line data.
+  final Path path;
+
+  /// The left-most visible tick's position.
+  final Offset startPosition;
+
+  /// The right-most visible tick's position.
+  final Offset endPosition;
 }
