@@ -24,6 +24,21 @@ Tick? findClosestToEpoch(int targetEpoch, List<Tick> ticks) {
   }
 }
 
+/// Finds closest index in the [ticks] to the [index].
+int findClosestIndex(double index, List<Tick> ticks) {
+  if (ticks.isEmpty) {
+    return index.round();
+  }
+
+  if (index < 0) {
+    return 0;
+  } else if (index > ticks.length - 1) {
+    return ticks.length - 1;
+  } else {
+    return index.round();
+  }
+}
+
 /// Returns index of the [epoch] location in [ticks].
 ///
 /// E.g. `3` if [epoch] matches epoch of `ticks[3]`.
