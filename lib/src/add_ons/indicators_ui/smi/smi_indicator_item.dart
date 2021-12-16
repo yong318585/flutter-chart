@@ -1,9 +1,6 @@
-import 'package:deriv_chart/generated/l10n.dart';
 import 'package:deriv_chart/deriv_chart.dart';
 import 'package:deriv_chart/src/add_ons/indicators_ui/widgets/dropdown_menu.dart';
 import 'package:deriv_chart/src/add_ons/indicators_ui/widgets/field_widget.dart';
-import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/chart_series/indicators_series/ma_series.dart';
-import 'package:deriv_chart/src/deriv_chart/chart/helpers/functions/helper_functions.dart';
 
 import 'package:flutter/material.dart';
 
@@ -172,7 +169,7 @@ class SMIIndicatorItemState extends IndicatorItemState<SMIIndicatorConfig> {
         initialValue: _currentMAType,
         items: MovingAverageType.values,
         label: ChartLocalization.of(context).labelType,
-        labelForItem: (MovingAverageType type) => getEnumValue(type),
+        labelForItem: (MovingAverageType type) => type.name,
         onItemSelected: (MovingAverageType? newType) => setState(
           () {
             _maType = newType ?? MovingAverageType.simple;
