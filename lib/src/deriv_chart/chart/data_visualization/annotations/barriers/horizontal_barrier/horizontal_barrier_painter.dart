@@ -1,5 +1,7 @@
-import 'dart:ui';
+import 'dart:ui' as ui;
 
+import 'package:deriv_chart/deriv_chart.dart';
+import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/chart_data.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/chart_series/series_painter.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/models/animation_info.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/models/barrier_objects.dart';
@@ -7,11 +9,7 @@ import 'package:deriv_chart/src/deriv_chart/chart/helpers/paint_functions/create
 import 'package:deriv_chart/src/deriv_chart/chart/helpers/paint_functions/paint_dot.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/helpers/paint_functions/paint_line.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/helpers/paint_functions/paint_text.dart';
-import 'package:deriv_chart/src/theme/painting_styles/barrier_style.dart';
 import 'package:flutter/material.dart';
-
-import '../../../chart_data.dart';
-import 'horizontal_barrier.dart';
 
 /// A class for painting horizontal barriers.
 class HorizontalBarrierPainter<T extends HorizontalBarrier>
@@ -33,6 +31,13 @@ class HorizontalBarrierPainter<T extends HorizontalBarrier>
   /// Padding on both sides of the title (so that barrier line doesn't touch
   /// title text).
   static const double _titleHorizontalPadding = 2;
+
+  /// Barrier position which is calculated on painting the barrier.
+  // TODO(Ramin): Breakdown paintings into smaller classes and find a way to
+  //  make them reusable.
+  // Proposal: Return useful PaintInfo in the [paint] method to be used by other
+  // painters
+  Offset? _barrierPosition;
 
   @override
   void onPaint({
@@ -71,14 +76,14 @@ class HorizontalBarrierPainter<T extends HorizontalBarrier>
       // Calculating animated values regarding `currentTickPercent` in
       // transition animation
       // from previousObject to new object
-      animatedValue = lerpDouble(
+      animatedValue = ui.lerpDouble(
         previousBarrier.value,
         series.value,
         animationInfo.currentTickPercent,
       );
 
       if (series.epoch != null && series.previousObject!.leftEpoch != null) {
-        dotX = lerpDouble(
+        dotX = ui.lerpDouble(
           epochToX(series.previousObject!.leftEpoch!),
           epochToX(series.epoch!),
           animationInfo.currentTickPercent,
@@ -191,6 +196,8 @@ class HorizontalBarrierPainter<T extends HorizontalBarrier>
         );
       }
     }
+
+    _barrierPosition = Offset(dotX!, y);
   }
 
   /// Paints a background based on the given [LabelShape] for the label text.
@@ -322,5 +329,66 @@ class HorizontalBarrierPainter<T extends HorizontalBarrier>
             size: arrowSize,
           ),
           arrowPaint..color = _paint.color.withOpacity(0.32));
+  }
+}
+
+/// The painter for the [IconTickIndicator] which paints the icon on the
+/// barrier's tick position.
+class IconBarrierPainter extends HorizontalBarrierPainter<IconTickIndicator> {
+  /// Initializes [IconBarrierPainter].
+  IconBarrierPainter(IconTickIndicator series) : super(series);
+
+  @override
+  void onPaint({
+    required Canvas canvas,
+    required Size size,
+    required EpochToX epochToX,
+    required QuoteToY quoteToY,
+    required AnimationInfo animationInfo,
+  }) {
+    super.onPaint(
+      canvas: canvas,
+      size: size,
+      epochToX: epochToX,
+      quoteToY: quoteToY,
+      animationInfo: animationInfo,
+    );
+
+    if (_barrierPosition != null) {
+      _paintIcon(canvas);
+    }
+  }
+
+  void _paintIcon(ui.Canvas canvas) {
+    final Icon icon = series.icon;
+
+    final double iconSize = icon.size!;
+    final double innerIconSize = iconSize * 0.6;
+
+    canvas
+      ..drawCircle(
+        _barrierPosition!,
+        iconSize / 2,
+        _paint,
+      )
+      ..drawCircle(
+        _barrierPosition!,
+        (iconSize / 2) - 2,
+        Paint()..color = Colors.black.withOpacity(0.32),
+      );
+
+    TextPainter(textDirection: TextDirection.ltr)
+      ..text = TextSpan(
+        text: String.fromCharCode(icon.icon!.codePoint),
+        style: TextStyle(
+          fontSize: innerIconSize,
+          fontFamily: icon.icon!.fontFamily,
+        ),
+      )
+      ..layout()
+      ..paint(
+        canvas,
+        _barrierPosition! - Offset(innerIconSize / 2, innerIconSize / 2),
+      );
   }
 }

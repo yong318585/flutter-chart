@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:deriv_chart/deriv_chart.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/chart_data.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/chart_series/series_painter.dart';
+import 'package:flutter/material.dart';
 
 import 'candle_indicator_painter.dart';
+import 'horizontal_barrier_painter.dart';
 
 /// Tick indicator.
 class TickIndicator extends HorizontalBarrier {
@@ -93,4 +95,27 @@ class CandleIndicator extends HorizontalBarrier {
 
   @override
   SeriesPainter<Series> createPainter() => CandleIndicatorPainter(this);
+}
+
+/// A tick indicator which also paints an icon on top of the barrier's tick.
+class IconTickIndicator extends TickIndicator {
+  /// Initializes
+  /// Paints the [icon] on top of the [tick].
+  IconTickIndicator(
+    Tick tick,
+    this.icon, {
+    String? id,
+    HorizontalBarrierStyle? style,
+    HorizontalBarrierVisibility visibility = HorizontalBarrierVisibility.normal,
+  })  : assert(
+          icon.size != null,
+          'Icon size must be specified for icon tick indicator',
+        ),
+        super(tick, id: id, style: style, visibility: visibility);
+
+  /// The icon to be painted on top of the barrier's tick.
+  final Icon icon;
+
+  @override
+  SeriesPainter<Series> createPainter() => IconBarrierPainter(this);
 }
