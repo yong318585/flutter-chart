@@ -1,13 +1,15 @@
-import 'package:deriv_chart/deriv_chart.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/custom_painters/chart_data_painter.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/y_axis/y_grid_label_painter.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/y_axis/y_grid_line_painter.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/gestures/gesture_manager.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/x_axis/x_axis_model.dart';
 import 'package:deriv_chart/src/models/chart_config.dart';
+import 'package:deriv_chart/src/theme/chart_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../misc/callbacks.dart';
+import 'data_visualization/chart_series/series.dart';
 import 'data_visualization/models/animation_info.dart';
 import 'helpers/functions/conversion.dart';
 import 'helpers/functions/helper_functions.dart';
@@ -22,6 +24,7 @@ class BasicChart extends StatefulWidget {
     this.pipSize = 4,
     this.opacity = 1,
     Key? key,
+    this.onQuoteAreaChanged,
   }) : super(key: key);
 
   /// The main series to display on the chart.
@@ -32,6 +35,9 @@ class BasicChart extends StatefulWidget {
 
   /// The opacity of the chart's data.
   final double opacity;
+
+  /// Callback provided by library user.
+  final VisibleQuoteAreaChangedCallback? onQuoteAreaChanged;
 
   @override
   BasicChartState<BasicChart> createState() => BasicChartState<BasicChart>();
@@ -158,8 +164,22 @@ class BasicChartState<T extends BasicChart> extends State<T>
 
   /// Call function to calculate the grid line quotes and put them inside
   /// [yAxisModel].
-  List<double> calculateGridLineQuotes(YAxisModel yAxisModel) =>
-      gridLineQuotes = yAxisModel.gridQuotes();
+  List<double> calculateGridLineQuotes(YAxisModel yAxisModel) {
+    final List<double> newGridLineQuotes = yAxisModel.gridQuotes();
+
+    if (newGridLineQuotes.isNotEmpty &&
+        (gridLineQuotes == null ||
+            gridLineQuotes!.isEmpty ||
+            newGridLineQuotes.first != gridLineQuotes!.first ||
+            newGridLineQuotes.last != gridLineQuotes!.last)) {
+      widget.onQuoteAreaChanged
+          ?.call(newGridLineQuotes.first, newGridLineQuotes.last);
+    }
+
+    gridLineQuotes = newGridLineQuotes;
+
+    return gridLineQuotes!;
+  }
 
   void _playNewTickAnimation() {
     _currentTickAnimationController
@@ -205,6 +225,18 @@ class BasicChartState<T extends BasicChart> extends State<T>
       vsync: this,
       duration: quoteBoundsAnimationDuration,
     );
+
+    /// Builds the widget once the animation is finished
+    /// so that the y-axis is correctly filled.
+    topBoundQuoteAnimationController.addListener(_quoteAnimationListener);
+    bottomBoundQuoteAnimationController.addListener(_quoteAnimationListener);
+  }
+
+  void _quoteAnimationListener() {
+    if (topBoundQuoteAnimationController.isCompleted &&
+        bottomBoundQuoteAnimationController.isCompleted) {
+      setState(() {});
+    }
   }
 
   void _clearGestures() {
@@ -261,8 +293,8 @@ class BasicChartState<T extends BasicChart> extends State<T>
       );
 
   /// Returns quote based on the y-coordinate.
-  double chartQuoteFromCanvasY(double quote) => quoteFromCanvasY(
-        y: quote,
+  double chartQuoteFromCanvasY(double y) => quoteFromCanvasY(
+        y: y,
         topBoundQuote: _topBoundQuote,
         bottomBoundQuote: _bottomBoundQuote,
         canvasHeight: canvasSize?.height ?? 200,
@@ -281,10 +313,11 @@ class BasicChartState<T extends BasicChart> extends State<T>
             constraints.maxHeight,
           );
 
-          final YAxisModel yAxisModel = _setupYAxisModel(canvasSize!);
-
           updateVisibleData();
           _updateQuoteBoundTargets();
+
+          final YAxisModel yAxisModel = _setupYAxisModel(canvasSize!);
+
           final List<double> gridLineQuotes =
               calculateGridLineQuotes(yAxisModel);
           return Stack(
@@ -407,5 +440,15 @@ class BasicChartState<T extends BasicChart> extends State<T>
       verticalPaddingFraction =
           ((verticalPadding + dy) / canvasSize!.height).clamp(0.05, 0.49);
     });
+    _onScaleYAxis();
+  }
+
+  void _onScaleYAxis() {
+    if (gridLineQuotes != null && gridLineQuotes!.isNotEmpty) {
+      widget.onQuoteAreaChanged?.call(
+        gridLineQuotes!.first,
+        gridLineQuotes!.last,
+      );
+    }
   }
 }
