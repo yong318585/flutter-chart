@@ -29,6 +29,7 @@ class Chart extends StatefulWidget {
     this.dataFitEnabled = false,
     this.opacity = 1.0,
     this.annotations,
+    this.chartAxisConfig,
     Key? key,
   }) : super(key: key);
 
@@ -78,6 +79,9 @@ class Chart extends StatefulWidget {
 
   /// Chart's opacity, Will be applied on the [mainSeries].
   final double opacity;
+
+  /// Configurations for chart's axes.
+  final ChartAxisConfig? chartAxisConfig;
 
   @override
   State<StatefulWidget> createState() => _ChartState();
@@ -160,6 +164,7 @@ class _ChartState extends State<Chart> with WidgetsBindingObserver {
                         !widget.dataFitEnabled,
                     showDataFitButton: widget.dataFitEnabled,
                     opacity: widget.opacity,
+                    chartAxisConfig: widget.chartAxisConfig,
                   ),
                 ),
                 if (widget.bottomSeries?.isNotEmpty ?? false)
@@ -201,7 +206,7 @@ class _ChartState extends State<Chart> with WidgetsBindingObserver {
         _followCurrentTick != null &&
         _followCurrentTick!) {
       WidgetsFlutterBinding.ensureInitialized().addPostFrameCallback((_) {
-        _controller.onScrollToLastTick?.call(false);
+        _controller.onScrollToLastTick?.call(animate: false);
       });
     }
   }
@@ -230,7 +235,7 @@ class _ChartState extends State<Chart> with WidgetsBindingObserver {
         widget.mainSeries.entries!.isNotEmpty) {
       if (widget.mainSeries.entries!.first.epoch !=
           oldWidget.mainSeries.entries!.first.epoch) {
-        _controller.onScrollToLastTick?.call(false);
+        _controller.onScrollToLastTick?.call(animate: false);
       }
     }
   }
