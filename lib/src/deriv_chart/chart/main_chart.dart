@@ -48,6 +48,9 @@ class MainChart extends BasicChart {
     this.annotations,
     this.verticalPaddingFraction,
     this.loadingAnimationColor,
+    this.showCurrentTickBlinkAnimation = true,
+    super.currentTickAnimationDuration,
+    super.quoteBoundsAnimationDuration,
     double opacity = 1,
     VisibleQuoteAreaChangedCallback? onQuoteAreaChanged,
     this.showCrosshair = false,
@@ -116,6 +119,9 @@ class MainChart extends BasicChart {
   /// The color of the loading animation.
   final Color? loadingAnimationColor;
 
+  /// Whether to show current tick blink animation or not.
+  final bool showCurrentTickBlinkAnimation;
+
   @override
   _ChartImplementationState createState() => _ChartImplementationState();
 }
@@ -177,7 +183,9 @@ class _ChartImplementationState extends BasicChartState<MainChart> {
 
     didUpdateChartData(oldChart);
 
-    if (widget.isLive != oldChart.isLive) {
+    if (widget.isLive != oldChart.isLive ||
+        widget.showCurrentTickBlinkAnimation !=
+            oldChart.showCurrentTickBlinkAnimation) {
       _updateBlinkingAnimationStatus();
     }
 
@@ -188,7 +196,7 @@ class _ChartImplementationState extends BasicChartState<MainChart> {
   }
 
   void _updateBlinkingAnimationStatus() {
-    if (widget.isLive) {
+    if (widget.isLive && widget.showCurrentTickBlinkAnimation) {
       _currentTickBlinkingController.repeat(reverse: true);
     } else {
       _currentTickBlinkingController
@@ -287,12 +295,16 @@ class _ChartImplementationState extends BasicChartState<MainChart> {
     _currentTickBlinkingController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
-    )..repeat(reverse: true);
+    );
 
     _currentTickBlinkAnimation = CurvedAnimation(
       parent: _currentTickBlinkingController,
       curve: Curves.easeInOut,
     );
+
+    if (widget.showCurrentTickBlinkAnimation) {
+      _currentTickBlinkingController.repeat(reverse: true);
+    }
   }
 
   @override
@@ -329,11 +341,7 @@ class _ChartImplementationState extends BasicChartState<MainChart> {
                 super.build(context),
                 _buildSeries(),
                 _buildAnnotations(),
-                if (widget.markerSeries != null)
-                  MarkerArea(
-                    markerSeries: widget.markerSeries!,
-                    quoteToCanvasY: chartQuoteToCanvasY,
-                  ),
+                if (widget.markerSeries != null) _buildMarkerArea(),
                 _buildDrawingToolChart(),
                 if (kIsWeb) _buildCrosshairAreaWeb(),
                 if (!kIsWeb && !widget.drawingTools.isDrawingMoving)
@@ -470,6 +478,17 @@ class _ChartImplementationState extends BasicChartState<MainChart> {
               bottomY: chartQuoteToCanvasY(widget.mainSeries.minValue),
             ),
           ),
+        ),
+      );
+
+  Widget _buildMarkerArea() => MultipleAnimatedBuilder(
+        animations: <Listenable>[
+          topBoundQuoteAnimationController,
+          bottomBoundQuoteAnimationController
+        ],
+        builder: (BuildContext context, _) => MarkerArea(
+          markerSeries: widget.markerSeries!,
+          quoteToCanvasY: chartQuoteToCanvasY,
         ),
       );
 
