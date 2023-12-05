@@ -179,6 +179,7 @@ class _XAxisState extends State<XAxis> with TickerProviderStateMixin {
                               _model.xFromEpoch(time.millisecondsSinceEpoch))
                           .toList(),
                       style: _chartTheme,
+                      msPerPx: _model.msPerPx,
                     ),
                   ),
                 ),
