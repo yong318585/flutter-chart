@@ -2,12 +2,13 @@ import 'package:deriv_chart/deriv_chart.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/chart_series/series_painter.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/models/accumulator_object.dart';
 
-import 'accumulators_closed_indicator_painter.dart';
+import 'accumulators_recently_closed_indicator_painter.dart';
 
 /// Accumulator Closed Contract Barriers.
-class AccumulatorsClosedIndicator extends ChartAnnotation<AccumulatorObject> {
+class AccumulatorsRecentlyClosedIndicator
+    extends ChartAnnotation<AccumulatorObject> {
   /// Initializes a tick indicator.
-  AccumulatorsClosedIndicator(
+  AccumulatorsRecentlyClosedIndicator(
     this.exitTick, {
     required this.lowBarrier,
     required this.highBarrier,
@@ -16,6 +17,7 @@ class AccumulatorsClosedIndicator extends ChartAnnotation<AccumulatorObject> {
     required this.barrierSpotDistance,
     required this.barrierEpoch,
     required this.activeContract,
+    required this.barrierEndEpoch,
     super.style,
     String? id,
   }) : super(id ?? 'AccumulatorsClosedIndicator');
@@ -44,9 +46,12 @@ class AccumulatorsClosedIndicator extends ChartAnnotation<AccumulatorObject> {
   /// The [epoch] of the tick that the barriers belong to.
   final int barrierEpoch;
 
+  /// Barrier end epoch.
+  final int barrierEndEpoch;
+
   @override
   SeriesPainter<Series> createPainter() =>
-      AccumulatorsClosedIndicatorPainter(this);
+      AccumulatorsRecentlyClosedIndicatorPainter(this);
 
   @override
   AccumulatorObject createObject() => AccumulatorObject(
@@ -55,6 +60,7 @@ class AccumulatorsClosedIndicator extends ChartAnnotation<AccumulatorObject> {
         lowBarrier: lowBarrier,
         highBarrier: highBarrier,
         profit: activeContract?.profit,
+        barrierEndEpoch: barrierEndEpoch,
       );
 
   @override
