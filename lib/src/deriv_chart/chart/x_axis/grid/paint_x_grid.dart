@@ -1,41 +1,72 @@
 import 'package:deriv_chart/src/deriv_chart/chart/helpers/paint_functions/paint_text.dart';
+import 'package:deriv_chart/src/deriv_chart/chart/x_axis/grid/check_new_day.dart';
+import 'package:deriv_chart/src/deriv_chart/chart/x_axis/grid/time_label.dart';
+import 'package:deriv_chart/src/theme/chart_theme.dart';
 import 'package:deriv_chart/src/theme/painting_styles/grid_style.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// Paints x-axis grid lines and labels.
 void paintXGrid(
   Canvas canvas,
   Size size, {
-  required List<String> timeLabels,
   required List<double> xCoords,
-  required GridStyle style,
+  required ChartTheme style,
+  required List<DateTime> timestamps,
+  required double msPerPx,
 }) {
-  assert(timeLabels.length == xCoords.length);
+  assert(timestamps.length == xCoords.length);
+  final GridStyle gridStyle = style.gridStyle;
 
-  _paintTimeGridLines(canvas, size, xCoords, style);
-  _paintTimeLabels(
+  _paintTimeGridLines(
     canvas,
     size,
-    xCoords: xCoords,
-    timeLabels: timeLabels,
-    style: style,
+    xCoords,
+    style,
+    gridStyle,
+    timestamps,
+    msPerPx,
   );
+
+  if (kIsWeb) {
+    _paintTimeLabelsWeb(
+      canvas,
+      size,
+      xCoords: xCoords,
+      gridStyle: gridStyle,
+      timestamps: timestamps,
+    );
+  } else {
+    _paintTimeLabels(
+      canvas,
+      size,
+      xCoords: xCoords,
+      gridStyle: gridStyle,
+      timestamps: timestamps,
+    );
+  }
 }
 
 void _paintTimeGridLines(
   Canvas canvas,
   Size size,
   List<double> xCoords,
-  GridStyle style,
+  ChartTheme style,
+  GridStyle gridStyle,
+  List<DateTime> time,
+  double msPerPx,
 ) {
-  for (final double x in xCoords) {
+  for (int i = 0; i < xCoords.length; i++) {
     canvas.drawLine(
-      Offset(x, 0),
-      Offset(x, size.height - style.xLabelsAreaHeight),
+      Offset(xCoords[i], 0),
+      Offset(xCoords[i], size.height - gridStyle.xLabelsAreaHeight),
       Paint()
-        ..color = style.gridLineColor
+        // checking if msPerPx is <  300000
+        ..color = (msPerPx < 300000 && checkNewDate(time[i]))
+            ? style.verticalBarrierStyle.color
+            : gridStyle.gridLineColor
         ..style = PaintingStyle.stroke
-        ..strokeWidth = style.lineThickness,
+        ..strokeWidth = gridStyle.lineThickness,
     );
   }
 }
@@ -43,19 +74,45 @@ void _paintTimeGridLines(
 void _paintTimeLabels(
   Canvas canvas,
   Size size, {
-  required List<String> timeLabels,
   required List<double> xCoords,
-  required GridStyle style,
+  required GridStyle gridStyle,
+  required List<DateTime> timestamps,
 }) {
-  timeLabels.asMap().forEach((int index, String timeLabel) {
+  for (int index = 0; index < timestamps.length; index++) {
     paintText(
       canvas,
-      text: timeLabel,
+      text: timeLabel(timestamps[index]),
       anchor: Offset(
         xCoords[index],
-        size.height - style.xLabelsAreaHeight / 2,
+        size.height - gridStyle.xLabelsAreaHeight / 2,
       ),
-      style: style.xLabelStyle,
+      style: gridStyle.xLabelStyle,
     );
-  });
+  }
+}
+
+void _paintTimeLabelsWeb(
+  Canvas canvas,
+  Size size, {
+  required List<double> xCoords,
+  required GridStyle gridStyle,
+  required List<DateTime> timestamps,
+}) {
+  final TextStyle textStyle = TextStyle(
+    fontSize: gridStyle.xLabelStyle.fontSize,
+    height: gridStyle.xLabelStyle.height,
+    color: gridStyle.xLabelStyle.color,
+  );
+
+  for (int index = 0; index < timestamps.length; index++) {
+    paintText(
+      canvas,
+      text: timeLabel(timestamps[index]),
+      anchor: Offset(
+        xCoords[index],
+        size.height - gridStyle.xLabelsAreaHeight / 2,
+      ),
+      style: textStyle,
+    );
+  }
 }
