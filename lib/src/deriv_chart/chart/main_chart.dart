@@ -345,7 +345,8 @@ class _ChartImplementationState extends BasicChartState<MainChart> {
                   _buildLoadingAnimation(),
                 // _buildQuoteGridLabel(gridLineQuotes),
                 super.build(context),
-                _buildSeries(),
+                if (widget.overlaySeries != null)
+                  _buildSeries(widget.overlaySeries!),
                 _buildAnnotations(),
                 if (widget.markerSeries != null) _buildMarkerArea(),
                 if (widget.drawingTools != null)
@@ -471,7 +472,7 @@ class _ChartImplementationState extends BasicChartState<MainChart> {
       );
 
   // Main series and indicators on top of main series.
-  Widget _buildSeries() => MultipleAnimatedBuilder(
+  Widget _buildSeries(List<Series> series) => MultipleAnimatedBuilder(
         animations: <Listenable>[
           topBoundQuoteAnimationController,
           bottomBoundQuoteAnimationController,
@@ -483,7 +484,7 @@ class _ChartImplementationState extends BasicChartState<MainChart> {
               animationInfo: AnimationInfo(
                 currentTickPercent: currentTickAnimation.value,
               ),
-              series: widget.overlaySeries!,
+              series: series,
               chartConfig: context.watch<ChartConfig>(),
               theme: context.watch<ChartTheme>(),
               epochToCanvasX: xAxis.xFromEpoch,
