@@ -33,7 +33,7 @@ class MainChart extends BasicChart {
   /// Initializes the main chart to display in the chart widget.
   MainChart({
     required DataSeries<Tick> mainSeries,
-    required this.drawingTools,
+    this.drawingTools,
     this.isLive = false,
     int pipSize = 4,
     Key? key,
@@ -83,7 +83,7 @@ class MainChart extends BasicChart {
 
   /// Keep the reference to the drawing tools class for
   /// sharing data between the DerivChart and the DrawingToolsDialog
-  final DrawingTools drawingTools;
+  final DrawingTools? drawingTools;
 
   /// The function that gets called on crosshair appearance.
   final VoidCallback? onCrosshairAppeared;
@@ -348,9 +348,12 @@ class _ChartImplementationState extends BasicChartState<MainChart> {
                 _buildSeries(),
                 _buildAnnotations(),
                 if (widget.markerSeries != null) _buildMarkerArea(),
-                _buildDrawingToolChart(),
+                if (widget.drawingTools != null)
+                  _buildDrawingToolChart(widget.drawingTools!),
                 if (kIsWeb) _buildCrosshairAreaWeb(),
-                if (!kIsWeb && !widget.drawingTools.isDrawingMoving)
+                if (widget.drawingTools != null &&
+                    !kIsWeb &&
+                    !widget.drawingTools!.isDrawingMoving)
                   _buildCrosshairArea(),
                 if (widget.showScrollToLastTickButton &&
                     _isScrollToLastTickAvailable)
@@ -372,7 +375,8 @@ class _ChartImplementationState extends BasicChartState<MainChart> {
         },
       );
 
-  Widget _buildDrawingToolChart() => MultipleAnimatedBuilder(
+  Widget _buildDrawingToolChart(DrawingTools drawingTools) =>
+      MultipleAnimatedBuilder(
         animations: <Listenable>[
           topBoundQuoteAnimationController,
           bottomBoundQuoteAnimationController,
@@ -381,7 +385,7 @@ class _ChartImplementationState extends BasicChartState<MainChart> {
           series: widget.mainSeries as DataSeries<Tick>,
           chartQuoteToCanvasY: chartQuoteToCanvasY,
           chartQuoteFromCanvasY: chartQuoteFromCanvasY,
-          drawingTools: widget.drawingTools,
+          drawingTools: drawingTools,
         ),
       );
 
