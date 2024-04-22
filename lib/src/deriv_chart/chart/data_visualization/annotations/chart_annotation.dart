@@ -27,29 +27,34 @@ abstract class ChartAnnotation<T extends ChartObject> extends Series {
   /// Is this [ChartAnnotation] on the chart's epoch range.
   bool isOnRange = false;
 
-  bool _shouldRepaint = false;
-
   @override
   bool didUpdate(ChartData? oldData) {
     final ChartAnnotation<T>? oldAnnotation = oldData as ChartAnnotation<T>?;
+    late final bool updated;
 
     if (annotationObject == oldAnnotation?.annotationObject) {
       previousObject = oldAnnotation?.previousObject;
-      _shouldRepaint = false;
+      updated = false;
     } else {
       previousObject = oldAnnotation?.annotationObject;
-      _shouldRepaint = true;
+      updated = true;
     }
-    return _shouldRepaint;
+
+    return updated;
   }
 
+  // TODO(Ramin): should repaint logic should be based on whether the annotation
+  //  is on range and also if the scroll position has changed
+  // Right now we're making decision based on if it's in rage or not.
+  // Should add a way to check for view port range change as well.
   @override
   bool shouldRepaint(ChartData? previous) {
     final ChartAnnotation<T>? previousAnnotation =
         previous as ChartAnnotation<T>?;
     if (isOnRange || isOnRange != previousAnnotation!.isOnRange) {
-      return _shouldRepaint;
+      return true;
     }
+
     return false;
   }
 
