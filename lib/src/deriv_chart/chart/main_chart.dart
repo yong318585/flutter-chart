@@ -352,9 +352,7 @@ class _ChartImplementationState extends BasicChartState<MainChart> {
                 if (widget.drawingTools != null)
                   _buildDrawingToolChart(widget.drawingTools!),
                 if (kIsWeb) _buildCrosshairAreaWeb(),
-                if (widget.drawingTools != null &&
-                    !kIsWeb &&
-                    !widget.drawingTools!.isDrawingMoving)
+                if (!kIsWeb && !(widget.drawingTools?.isDrawingMoving ?? false))
                   _buildCrosshairArea(),
                 if (widget.showScrollToLastTickButton &&
                     _isScrollToLastTickAvailable)
