@@ -45,7 +45,7 @@ abstract class ChartAnnotation<T extends ChartObject> extends Series {
 
   // TODO(Ramin): should repaint logic should be based on whether the annotation
   //  is on range and also if the scroll position has changed
-  // Right now we're making decision based on if it's in rage or not.
+  // Right now we're making decision based on if it's in range or not.
   // Should add a way to check for view port range change as well.
   @override
   bool shouldRepaint(ChartData? previous) {
