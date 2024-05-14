@@ -63,7 +63,7 @@ void _paintTimeGridLines(
       Paint()
         // checking if msPerPx is <  300000
         ..color = (msPerPx < 300000 && checkNewDate(time[i]))
-            ? style.verticalBarrierStyle.color
+            ? gridStyle.gridLineHighlightColor
             : gridStyle.gridLineColor
         ..style = PaintingStyle.stroke
         ..strokeWidth = gridStyle.lineThickness,
