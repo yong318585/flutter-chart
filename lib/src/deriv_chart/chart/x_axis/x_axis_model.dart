@@ -54,7 +54,7 @@ class XAxisModel extends ChangeNotifier {
     required int granularity,
     required AnimationController animationController,
     required bool isLive,
-    required this.maxCurrentTickOffset,
+    required double maxCurrentTickOffset,
     this.defaultIntervalWidth = 20,
     bool startWithDataFitMode = false,
     int? minEpoch,
@@ -66,6 +66,8 @@ class XAxisModel extends ChangeNotifier {
     this.onScale,
     this.onScroll,
   }) {
+    _maxCurrentTickOffset = maxCurrentTickOffset;
+
     _nowEpoch = entries.isNotEmpty
         ? entries.last.epoch
         : DateTime.now().millisecondsSinceEpoch;
@@ -102,9 +104,6 @@ class XAxisModel extends ChangeNotifier {
       });
   }
 
-  /// Max distance between [rightBoundEpoch] and [_nowEpoch] in pixels.
-  /// Limits panning to the right.
-  final double maxCurrentTickOffset;
 
   late double _minIntervalWidth;
 
@@ -118,7 +117,7 @@ class XAxisModel extends ChangeNotifier {
 
   /// Max distance between [rightBoundEpoch] and [_nowEpoch] in pixels.
   /// Limits panning to the right.
-  late double _maxCurrentTickOffset;
+  double _maxCurrentTickOffset = 200;
 
   late bool _isLive;
 
@@ -543,6 +542,7 @@ class XAxisModel extends ChangeNotifier {
     int? minEpoch,
     int? maxEpoch,
     EdgeInsets? dataFitPadding,
+    double? maxCurrentTickOffset,
   }) {
     _updateIsLive(isLive);
     _updateGranularity(granularity);
@@ -551,6 +551,7 @@ class XAxisModel extends ChangeNotifier {
     _minEpoch = minEpoch ?? _minEpoch;
     _maxEpoch = maxEpoch ?? _maxEpoch;
     _dataFitPadding = dataFitPadding ?? _dataFitPadding;
+    _maxCurrentTickOffset = maxCurrentTickOffset ?? _maxCurrentTickOffset;
   }
 
   /// Returns a list of timestamps in the grid without any overlaps.

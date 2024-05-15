@@ -142,6 +142,8 @@ class XAxisState extends State<XAxisBase> with TickerProviderStateMixin {
       granularity: context.read<ChartConfig>().granularity,
       entries: widget.entries,
       dataFitPadding: widget.dataFitPadding,
+      maxCurrentTickOffset:
+          context.read<ChartConfig>().chartAxisConfig.maxCurrentTickOffset,
     );
   }
 
