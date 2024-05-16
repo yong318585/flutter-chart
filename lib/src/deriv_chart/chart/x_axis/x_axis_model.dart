@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:deriv_chart/src/deriv_chart/chart/helpers/functions/conversion.dart';
 import 'package:deriv_chart/src/models/tick.dart';
 import 'package:deriv_chart/src/models/time_range.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'functions/calc_no_overlay_time_gaps.dart';
@@ -17,7 +18,7 @@ import 'grid/calc_time_grid.dart';
 const double autoPanOffset = 30;
 
 /// Padding around data used in data-fit mode.
-const EdgeInsets dataFitPadding = EdgeInsets.only(left: 16, right: 120);
+const EdgeInsets defaultDataFitPadding = EdgeInsets.only(left: 16, right: 120);
 
 /// Modes that control chart's zoom and scroll behaviour without user
 /// interaction.
@@ -58,6 +59,10 @@ class XAxisModel extends ChangeNotifier {
     bool startWithDataFitMode = false,
     int? minEpoch,
     int? maxEpoch,
+    double? msPerPx,
+    double? minIntervalWidth,
+    double? maxIntervalWidth,
+    EdgeInsets? dataFitPadding,
     this.onScale,
     this.onScroll,
   }) {
@@ -74,10 +79,15 @@ class XAxisModel extends ChangeNotifier {
 
     _lastEpoch = DateTime.now().millisecondsSinceEpoch;
     _granularity = granularity;
-    _msPerPx = _defaultMsPerPx;
+    _msPerPx = msPerPx ?? _defaultMsPerPx;
     _isLive = isLive;
+    _maxCurrentTickOffset = maxCurrentTickOffset;
     _rightBoundEpoch = _maxRightBoundEpoch;
     _dataFitMode = startWithDataFitMode;
+    _minIntervalWidth = minIntervalWidth ?? 1;
+    _maxIntervalWidth = maxIntervalWidth ?? 80;
+
+    _dataFitPadding = dataFitPadding ?? defaultDataFitPadding;
 
     _updateEntries(entries);
 
@@ -85,7 +95,7 @@ class XAxisModel extends ChangeNotifier {
       ..addListener(() {
         final double diff =
             _scrollAnimationController.value - (_prevScrollAnimationValue ?? 0);
-        _scrollBy(diff);
+        scrollBy(diff);
 
         if (hasHitLimit) {
           _scrollAnimationController.stop();
@@ -94,18 +104,20 @@ class XAxisModel extends ChangeNotifier {
       });
   }
 
-  double _maxCurrentTickOffset = 200;
 
-  // TODO(NA): Allow customization of this setting.
-  /// Scaling will not resize intervals to be smaller than this.
-  static const int minIntervalWidth = 1;
+  late double _minIntervalWidth;
 
-  // TODO(NA): Allow customization of this setting.
-  /// Scaling will not resize intervals to be bigger than this.
-  static const int maxIntervalWidth = 80;
+  late double _maxIntervalWidth;
+
+  /// Padding around data used in data-fit mode.
+  late EdgeInsets _dataFitPadding;
 
   /// Default to this interval width on granularity change.
   final double defaultIntervalWidth;
+
+  /// Max distance between [rightBoundEpoch] and [_nowEpoch] in pixels.
+  /// Limits panning to the right.
+  double _maxCurrentTickOffset = 200;
 
   late bool _isLive;
 
@@ -176,10 +188,10 @@ class XAxisModel extends ChangeNotifier {
   double get msPerPx => _msPerPx;
 
   /// Min value for [_msPerPx]. Limits zooming in.
-  double get _minMsPerPx => _granularity / maxIntervalWidth;
+  double get _minMsPerPx => _granularity / _maxIntervalWidth;
 
   /// Max value for [_msPerPx]. Limits zooming out.
-  double get _maxMsPerPx => _granularity / minIntervalWidth;
+  double get _maxMsPerPx => _granularity / _minIntervalWidth;
 
   /// Starting value for [_msPerPx].
   double get _defaultMsPerPx => _granularity / defaultIntervalWidth;
@@ -203,6 +215,18 @@ class XAxisModel extends ChangeNotifier {
     return ViewingMode.stationary;
   }
 
+  /// Called on each tick's curve animation
+  /// Updates scroll position if the [_currentViewingMode] in follow mode.
+  void scrollAnimationListener(int offsetEpoch) {
+    _nowEpoch = (_entries?.isNotEmpty ?? false)
+        ? _entries!.last.epoch
+        : _nowEpoch + offsetEpoch;
+
+    if (_currentViewingMode == ViewingMode.followCurrentTick) {
+      _scrollTo(_rightBoundEpoch + offsetEpoch);
+    }
+  }
+
   /// Called on each frame.
   /// Updates zoom and scroll position based on current [_currentViewingMode].
   void onNewFrame(Duration _) {
@@ -211,27 +235,22 @@ class XAxisModel extends ChangeNotifier {
     _nowEpoch = (_entries?.isNotEmpty ?? false)
         ? _entries!.last.epoch
         : _nowEpoch + elapsedMs;
-    _lastEpoch = newNowTime;
     // TODO(NA): Consider refactoring the switch with OOP pattern. https://refactoring.com/catalog/replaceConditionalWithPolymorphism.html
     switch (_currentViewingMode) {
       case ViewingMode.followCurrentTick:
         _scrollTo(_rightBoundEpoch + elapsedMs);
         break;
       case ViewingMode.fitData:
-        _fitData();
-
-        /// Switch to [ViewingMode.followCurrentTick] once reached zoom out
-        /// limit.
-        if (_msPerPx == _maxMsPerPx) {
-          disableDataFit();
-        }
+        fitAvailableData();
         break;
       case ViewingMode.constantScrollSpeed:
-        _scrollBy(_panSpeed * elapsedMs);
+        scrollBy(_panSpeed * elapsedMs);
         break;
       case ViewingMode.stationary:
         break;
     }
+
+    _lastEpoch = newNowTime;
   }
 
   /// Updates scrolling bounds and time gaps based on the main chart's entries.
@@ -304,7 +323,23 @@ class XAxisModel extends ChangeNotifier {
   /// Updates chart's isLive property.
   ///
   /// Should be called before [_updateGranularity] and [_updateEntries]
-  void _updateIsLive(bool? isLive) => _isLive = isLive ?? true;
+  void _updateIsLive(bool? isLive) {
+    if (isLive == null || _isLive == isLive) {
+      return;
+    }
+    _isLive = isLive;
+  }
+
+  /// Fits available data to screen and to disable data fit mode.
+  void fitAvailableData() {
+    _fitData();
+
+    /// Switch to [ViewingMode.followCurrentTick] once reached zoom out
+    /// limit.
+    if (_msPerPx == _maxMsPerPx) {
+      disableDataFit();
+    }
+  }
 
   /// Fits available data to screen.
   void _fitData() {
@@ -314,17 +349,21 @@ class XAxisModel extends ChangeNotifier {
       // `entries.length * granularity` gives ms duration with market gaps
       // excluded.
       final int msDataDuration = _entries!.length * granularity;
-      final double pxTargetDataWidth = width! - dataFitPadding.horizontal;
+      final double pxTargetDataWidth = width! - _dataFitPadding.horizontal;
 
       _msPerPx =
           (msDataDuration / pxTargetDataWidth).clamp(_minMsPerPx, _maxMsPerPx);
-      _scrollTo(_shiftEpoch(lastEntryEpoch, dataFitPadding.right));
+      _scrollTo(_shiftEpoch(lastEntryEpoch, _dataFitPadding.right));
     }
   }
 
   /// Enables data fit viewing mode.
   void enableDataFit() {
     _dataFitMode = true;
+    if (kIsWeb) {
+      fitAvailableData();
+    }
+
     notifyListeners();
   }
 
@@ -407,7 +446,7 @@ class XAxisModel extends ChangeNotifier {
 
   /// Called when user is panning the chart.
   void onPanUpdate(DragUpdateDetails details) {
-    _scrollBy(-details.delta.dx);
+    scrollBy(-details.delta.dx);
   }
 
   /// Called at the end of scale and pan gestures.
@@ -415,39 +454,43 @@ class XAxisModel extends ChangeNotifier {
     _triggerScrollMomentum(details.velocity);
   }
 
-  void _scaleWithNowFixed(ScaleUpdateDetails details) {
-    final double nowToRightBound = pxBetween(_nowEpoch, rightBoundEpoch);
-    _scale(details.scale);
-    _rightBoundEpoch = _shiftEpoch(_nowEpoch, nowToRightBound);
-  }
-
-  void _scaleWithFocalPointFixed(ScaleUpdateDetails details) {
-    final double focalToRightBound = width! - details.focalPoint.dx;
-    final int focalEpoch = _shiftEpoch(rightBoundEpoch, -focalToRightBound);
-    _scale(details.scale);
-    _rightBoundEpoch = _shiftEpoch(focalEpoch, focalToRightBound);
-  }
-
-  void _scale(double scale) {
+  /// Called to scale the chart
+  void scale(double scale) {
     _msPerPx = (_prevMsPerPx! / scale).clamp(_minMsPerPx, _maxMsPerPx);
     onScale?.call();
     notifyListeners();
   }
 
+  /// Called to scroll the chart
+  void scrollBy(double pxShift) {
+    _rightBoundEpoch = _shiftEpoch(_rightBoundEpoch, pxShift);
+    _clampRightBoundEpoch();
+    onScroll?.call();
+    notifyListeners();
+  }
+
+  void _scaleWithNowFixed(ScaleUpdateDetails details) {
+    final double nowToRightBound = pxBetween(_nowEpoch, rightBoundEpoch);
+    scale(details.scale);
+    _rightBoundEpoch = _shiftEpoch(_nowEpoch, nowToRightBound);
+    _clampRightBoundEpoch();
+  }
+
+  void _scaleWithFocalPointFixed(ScaleUpdateDetails details) {
+    final double focalToRightBound = width! - details.focalPoint.dx;
+    final int focalEpoch = _shiftEpoch(rightBoundEpoch, -focalToRightBound);
+    scale(details.scale);
+    _rightBoundEpoch = _shiftEpoch(focalEpoch, focalToRightBound);
+    _clampRightBoundEpoch();
+  }
+
   void _scrollTo(int rightBoundEpoch) {
-    if (_rightBoundEpoch != rightBoundEpoch) {
+    if (width != null && _rightBoundEpoch != rightBoundEpoch) {
       _rightBoundEpoch = rightBoundEpoch;
       _clampRightBoundEpoch();
       onScroll?.call();
       notifyListeners();
     }
-  }
-
-  void _scrollBy(double pxShift) {
-    _rightBoundEpoch = _shiftEpoch(_rightBoundEpoch, pxShift);
-    _clampRightBoundEpoch();
-    onScroll?.call();
-    notifyListeners();
   }
 
   /// Animate scrolling to current tick.
@@ -498,6 +541,7 @@ class XAxisModel extends ChangeNotifier {
     List<Tick>? entries,
     int? minEpoch,
     int? maxEpoch,
+    EdgeInsets? dataFitPadding,
     double? maxCurrentTickOffset,
   }) {
     _updateIsLive(isLive);
@@ -506,6 +550,7 @@ class XAxisModel extends ChangeNotifier {
 
     _minEpoch = minEpoch ?? _minEpoch;
     _maxEpoch = maxEpoch ?? _maxEpoch;
+    _dataFitPadding = dataFitPadding ?? _dataFitPadding;
     _maxCurrentTickOffset = maxCurrentTickOffset ?? _maxCurrentTickOffset;
   }
 
