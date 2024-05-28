@@ -136,6 +136,8 @@ class BasicChartState<T extends BasicChart> extends State<T>
   /// The xAxis model of the chart.
   XAxisModel get xAxis => context.read<XAxisModel>();
 
+  bool _isTickAnimationPlaying = false;
+
   @override
   void initState() {
     super.initState();
@@ -184,6 +186,9 @@ class BasicChartState<T extends BasicChart> extends State<T>
 
     topBoundQuoteAnimationController.dispose();
     bottomBoundQuoteAnimationController.dispose();
+
+    _isTickAnimationPlaying = false;
+
     _clearGestures();
     super.dispose();
   }
@@ -208,9 +213,11 @@ class BasicChartState<T extends BasicChart> extends State<T>
   }
 
   void _playNewTickAnimation() {
-    _currentTickAnimationController
-      ..reset()
-      ..forward();
+    if (!_isTickAnimationPlaying) {
+      _currentTickAnimationController
+        ..reset()
+        ..forward();
+    }
   }
 
   YAxisModel _setupYAxisModel(Size canvasSize) => yAxisModel = YAxisModel(
@@ -238,6 +245,13 @@ class BasicChartState<T extends BasicChart> extends State<T>
       parent: _currentTickAnimationController,
       curve: Curves.easeOut,
     );
+    _currentTickAnimationController.addListener(() {
+      if (_currentTickAnimationController.status != AnimationStatus.completed) {
+        _isTickAnimationPlaying = true;
+      } else {
+        _isTickAnimationPlaying = false;
+      }
+    });
   }
 
   void _setupBoundsAnimation() {
