@@ -202,15 +202,15 @@ class _DerivChartState extends State<DerivChart> {
   void _initRepos() {
     _indicatorsRepo = AddOnsRepository<IndicatorConfig>(
       createAddOn: (Map<String, dynamic> map) => IndicatorConfig.fromJson(map),
-      onEditCallback: showIndicatorsDialog,
-      currentSymbol: widget.activeSymbol,
+      onEditCallback: (_) => showIndicatorsDialog(),
+      sharedPrefKey: widget.activeSymbol,
     );
 
     _drawingToolsRepo = AddOnsRepository<DrawingToolConfig>(
       createAddOn: (Map<String, dynamic> map) =>
           DrawingToolConfig.fromJson(map),
-      onEditCallback: showDrawingToolsDialog,
-      currentSymbol: widget.activeSymbol,
+      onEditCallback: (_) => showDrawingToolsDialog(),
+      sharedPrefKey: widget.activeSymbol,
     );
     if (widget.drawingToolsRepo == null) {
       loadSavedIndicatorsAndDrawingTools();
