@@ -1,15 +1,17 @@
 import 'dart:math';
 import 'dart:ui';
 
-import 'package:deriv_chart/deriv_chart.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/chart_data.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/models/animation_info.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/models/barrier_objects.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/helpers/functions/helper_functions.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/helpers/paint_functions/paint_text.dart';
+import 'package:deriv_chart/src/theme/painting_styles/barrier_style.dart';
 import 'package:flutter/material.dart';
 
+import 'horizontal_barrier.dart';
 import 'horizontal_barrier_painter.dart';
+import 'tick_indicator.dart';
 
 /// A class for painting candle indicators.
 class CandleIndicatorPainter extends HorizontalBarrierPainter<CandleIndicator> {
@@ -74,14 +76,14 @@ class CandleIndicatorPainter extends HorizontalBarrierPainter<CandleIndicator> {
     // If previous object is null then its first load and no need to perform
     // transition animation from previousObject to new object.
     if (series.previousObject == null) {
-      animatedValue = series.value!;
+      animatedValue = series.quote!;
     } else {
       final BarrierObject previousBarrier = series.previousObject!;
       // Calculating animated values regarding `currentTickPercent` in
       // transition animation from previousObject to new object
       animatedValue = lerpDouble(
-        previousBarrier.value!,
-        series.value!,
+        previousBarrier.quote!,
+        series.quote!,
         animationInfo.currentTickPercent,
       )!;
     }

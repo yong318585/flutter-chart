@@ -1,14 +1,16 @@
-import 'package:deriv_chart/deriv_chart.dart';
+import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/chart_series/series.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/chart_series/series_painter.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/models/barrier_objects.dart';
+import 'package:deriv_chart/src/theme/painting_styles/barrier_style.dart';
 
+import '../barrier.dart';
 import 'horizontal_barrier_painter.dart';
 
 /// Horizontal barrier class.
 class HorizontalBarrier extends Barrier {
   /// Initializes a horizontal barrier.
   HorizontalBarrier(
-    double value, {
+    double quote, {
     int? epoch,
     String? id,
     String? title,
@@ -19,7 +21,7 @@ class HorizontalBarrier extends Barrier {
           id: id,
           title: title,
           epoch: epoch,
-          value: value,
+          quote: quote,
           style: style,
           longLine: longLine,
         );
@@ -41,7 +43,7 @@ class HorizontalBarrier extends Barrier {
           : <double>[double.nan, double.nan];
 
   @override
-  BarrierObject createObject() => BarrierObject(leftEpoch: epoch, value: value);
+  BarrierObject createObject() => BarrierObject(leftEpoch: epoch, quote: quote);
 }
 
 /// Horizontal barrier visibility behavior and whether it contributes in

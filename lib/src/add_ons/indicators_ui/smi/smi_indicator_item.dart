@@ -1,12 +1,15 @@
-import 'package:deriv_chart/deriv_chart.dart';
+import 'package:deriv_chart/generated/l10n.dart';
 import 'package:deriv_chart/src/add_ons/indicators_ui/widgets/dropdown_menu.dart'
     as deriv_dropdown;
 import 'package:deriv_chart/src/add_ons/indicators_ui/widgets/field_widget.dart';
 
 import 'package:flutter/material.dart';
+import 'package:deriv_chart/src/add_ons/indicators_ui/oscillator_lines/oscillator_lines_config.dart';
+import 'package:deriv_chart/src/add_ons/indicators_ui/indicator_config.dart';
+import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/chart_series/indicators_series/ma_series.dart';
+import 'package:flutter/material.dart' hide DropdownMenu;
 
 import '../callbacks.dart';
-import '../indicator_config.dart';
 import '../indicator_item.dart';
 import 'smi_indicator_config.dart';
 
@@ -44,14 +47,15 @@ class SMIIndicatorItemState extends IndicatorItemState<SMIIndicatorConfig> {
 
   @override
   SMIIndicatorConfig createIndicatorConfig() => SMIIndicatorConfig(
-        period: _currentPeriod,
-        smoothingPeriod: _currentSmoothingPeriod,
-        doubleSmoothingPeriod: _currentDoubleSmoothingPeriod,
+      period: _currentPeriod,
+      smoothingPeriod: _currentSmoothingPeriod,
+      doubleSmoothingPeriod: _currentDoubleSmoothingPeriod,
+      maType: _currentMAType,
+      signalPeriod: _currentSignalPeriod,
+      smiOscillatorLimits: OscillatorLinesConfig(
         overboughtValue: _currentOverboughtValue,
         oversoldValue: _currentOversoldValue,
-        maType: _currentMAType,
-        signalPeriod: _currentSignalPeriod,
-      );
+      ));
 
   @override
   Widget getIndicatorOptions() => Column(
@@ -145,7 +149,8 @@ class SMIIndicatorItemState extends IndicatorItemState<SMIIndicatorConfig> {
       );
 
   double get _currentOverboughtValue =>
-      _overboughtValue ?? (widget.config as SMIIndicatorConfig).overboughtValue;
+      _overboughtValue ??
+      (widget.config as SMIIndicatorConfig).smiOscillatorLimits.overboughtValue;
 
   Widget _buildOverSoldPriceField() => FieldWidget(
         label: ChartLocalization.of(context).labelOverSoldPrice,
@@ -161,7 +166,8 @@ class SMIIndicatorItemState extends IndicatorItemState<SMIIndicatorConfig> {
       );
 
   double get _currentOversoldValue =>
-      _oversoldValue ?? (widget.config as SMIIndicatorConfig).oversoldValue;
+      _oversoldValue ??
+      (widget.config as SMIIndicatorConfig).smiOscillatorLimits.oversoldValue;
 
   MovingAverageType get _currentMAType =>
       _maType ?? (widget.config as SMIIndicatorConfig).maType;
