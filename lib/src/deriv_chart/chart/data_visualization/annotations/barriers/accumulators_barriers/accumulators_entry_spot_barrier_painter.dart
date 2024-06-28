@@ -1,14 +1,17 @@
 import 'dart:ui' as ui;
 
-import 'package:deriv_chart/deriv_chart.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/chart_data.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/chart_series/series_painter.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/models/animation_info.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/models/barrier_objects.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/helpers/paint_functions/paint_accumulators_entry_spot.dart';
+import 'package:deriv_chart/src/deriv_chart/chart/helpers/paint_functions/paint_line.dart';
 import 'package:deriv_chart/src/theme/colors.dart';
+import 'package:deriv_chart/src/theme/painting_styles/barrier_style.dart';
 import 'package:deriv_chart/src/theme/painting_styles/entry_spot_style.dart';
 import 'package:flutter/material.dart';
+
+import 'accumulators_entry_spot_barrier.dart';
 
 /// A class for painting horizontal barrier with entry spot.
 class AccumulatorsEntrySpotBarrierPainter<
@@ -40,7 +43,7 @@ class AccumulatorsEntrySpotBarrierPainter<
     // If previous object is null then its first load and no need to perform
     // transition animation from previousObject to new object.
     if (series.previousObject == null) {
-      animatedValue = series.value;
+      animatedValue = series.quote;
       if (series.epoch != null) {
         dotX = epochToX(series.epoch!);
       }
@@ -50,8 +53,8 @@ class AccumulatorsEntrySpotBarrierPainter<
       // transition animation
       // from previousObject to new object
       animatedValue = ui.lerpDouble(
-        previousBarrier.value,
-        series.value,
+        previousBarrier.quote,
+        series.quote,
         animationInfo.currentTickPercent,
       );
 

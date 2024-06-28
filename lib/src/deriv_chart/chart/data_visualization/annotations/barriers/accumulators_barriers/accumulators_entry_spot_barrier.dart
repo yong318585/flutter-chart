@@ -1,7 +1,10 @@
-import 'package:deriv_chart/deriv_chart.dart';
+import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/chart_series/series.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/chart_series/series_painter.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/models/barrier_objects.dart';
+import 'package:deriv_chart/src/theme/painting_styles/barrier_style.dart';
 
+import '../barrier.dart';
+import '../horizontal_barrier/horizontal_barrier.dart';
 import 'accumulators_entry_spot_barrier_painter.dart';
 
 /// [AccumulatorsEntrySpotBarrier] creates a dot and a dashed horizontal barrier
@@ -58,7 +61,7 @@ class AccumulatorsEntrySpotBarrier extends Barrier {
           id: id,
           title: title,
           epoch: endingEpoch,
-          value: value,
+          quote: value,
           style: style,
           longLine: longLine,
         );
@@ -87,5 +90,5 @@ class AccumulatorsEntrySpotBarrier extends Barrier {
 
   @override
   BarrierObject createObject() =>
-      BarrierObject(leftEpoch: startingEpoch, rightEpoch: epoch, value: value);
+      BarrierObject(leftEpoch: startingEpoch, rightEpoch: epoch, quote: quote);
 }

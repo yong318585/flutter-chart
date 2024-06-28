@@ -1,14 +1,18 @@
 import 'dart:ui' as ui;
 
-import 'package:deriv_chart/deriv_chart.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/chart_data.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/chart_series/series_painter.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/models/animation_info.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/models/barrier_objects.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/helpers/paint_functions/create_shape_path.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/helpers/paint_functions/paint_dot.dart';
+import 'package:deriv_chart/src/deriv_chart/chart/helpers/paint_functions/paint_line.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/helpers/paint_functions/paint_text.dart';
+import 'package:deriv_chart/src/theme/painting_styles/barrier_style.dart';
 import 'package:flutter/material.dart';
+
+import 'horizontal_barrier.dart';
+import 'tick_indicator.dart';
 
 /// A class for painting horizontal barriers.
 class HorizontalBarrierPainter<T extends HorizontalBarrier>
@@ -54,6 +58,7 @@ class HorizontalBarrierPainter<T extends HorizontalBarrier>
         series.style as HorizontalBarrierStyle? ?? theme.horizontalBarrierStyle;
 
     _paint = Paint()
+      ..style = PaintingStyle.fill
       ..strokeWidth = 1
       ..color = style.color;
 
@@ -66,7 +71,7 @@ class HorizontalBarrierPainter<T extends HorizontalBarrier>
     // If previous object is null then its first load and no need to perform
     // transition animation from previousObject to new object.
     if (series.previousObject == null) {
-      animatedValue = series.value;
+      animatedValue = series.quote;
       if (series.epoch != null) {
         dotX = epochToX(series.epoch!);
       }
@@ -76,8 +81,8 @@ class HorizontalBarrierPainter<T extends HorizontalBarrier>
       // transition animation
       // from previousObject to new object
       animatedValue = ui.lerpDouble(
-        previousBarrier.value,
-        series.value,
+        previousBarrier.quote,
+        series.quote,
         animationInfo.currentTickPercent,
       );
 
@@ -107,7 +112,7 @@ class HorizontalBarrierPainter<T extends HorizontalBarrier>
 
     // Blinking dot.
     if (style.hasBlinkingDot && dotX != null) {
-      _paintBlinkingDot(canvas, dotX, y, animationInfo, style.blinkingDotColor);
+      paintBlinkingDot(canvas, dotX, y, animationInfo, style.blinkingDotColor);
     }
 
     final TextPainter valuePainter = makeTextPainter(
@@ -221,23 +226,6 @@ class HorizontalBarrierPainter<T extends HorizontalBarrier>
         paint,
       );
     }
-  }
-
-  void _paintBlinkingDot(
-    Canvas canvas,
-    double dotX,
-    double y,
-    AnimationInfo animationInfo,
-    Color color,
-  ) {
-    paintDot(canvas, Offset(dotX, y), color);
-
-    paintBlinkingGlow(
-      canvas,
-      Offset(dotX, y),
-      animationInfo.blinkingPercent,
-      color,
-    );
   }
 
   void _paintLine(

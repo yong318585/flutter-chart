@@ -13,6 +13,12 @@ typedef EpochToX = double Function(int);
 /// Conversion function to convert value(quote) value to canvas Y.
 typedef QuoteToY = double Function(double);
 
+/// Conversion function to convert canvas X to epoch value.
+typedef EpochFromX = int Function(double);
+
+/// Conversion function to convert canvas Y to value(quote).
+typedef QuoteFromY = double Function(double);
+
 /// Any data that the chart takes and makes it paint its self on the chart's
 /// canvas including Line, CandleStick data, Markers, barriers etc..
 abstract class ChartData {
@@ -33,7 +39,7 @@ abstract class ChartData {
   ///  new frame.
   bool shouldRepaint(ChartData? oldData);
 
-  /// Updates this [ChartData] after tye chart's epoch boundaries changes.
+  /// Updates this [ChartData] after the chart's epoch boundaries changes.
   void update(int leftEpoch, int rightEpoch);
 
   /// The minimum value this [ChartData] has at the current X-Axis epoch range

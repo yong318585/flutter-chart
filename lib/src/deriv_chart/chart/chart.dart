@@ -1,15 +1,31 @@
-import 'package:deriv_chart/deriv_chart.dart';
+import 'package:collection/collection.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/gestures/gesture_manager.dart';
-import 'package:deriv_chart/src/deriv_chart/chart/x_axis/x_axis.dart';
+import 'package:deriv_chart/src/deriv_chart/chart/x_axis/x_axis_wrapper.dart';
+import 'package:deriv_chart/src/deriv_chart/drawing_tool_chart/drawing_tools.dart';
 import 'package:deriv_chart/src/misc/callbacks.dart';
+import 'package:deriv_chart/src/models/chart_axis_config.dart';
 import 'package:deriv_chart/src/models/chart_config.dart';
+import 'package:deriv_chart/src/models/indicator_input.dart';
+import 'package:deriv_chart/src/theme/chart_default_light_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
-
+import '../../add_ons/indicators_ui/indicator_config.dart';
+import '../../add_ons/repository.dart';
+import '../../misc/chart_controller.dart';
+import '../../models/tick.dart';
+import '../../theme/chart_default_dark_theme.dart';
+import '../../theme/chart_theme.dart';
 import 'bottom_chart.dart';
+import 'data_visualization/annotations/chart_annotation.dart';
 import 'data_visualization/chart_data.dart';
+import 'data_visualization/chart_series/data_series.dart';
+import 'data_visualization/chart_series/series.dart';
+import 'data_visualization/markers/marker_series.dart';
+import 'data_visualization/models/chart_object.dart';
 import 'main_chart.dart';
+
+const Duration _defaultDuration = Duration(milliseconds: 300);
 
 /// Interactive chart widget.
 class Chart extends StatefulWidget {
@@ -17,19 +33,37 @@ class Chart extends StatefulWidget {
   const Chart({
     required this.mainSeries,
     required this.granularity,
+    this.drawingTools,
     this.pipSize = 4,
     this.controller,
-    this.overlaySeries,
-    this.bottomSeries,
+    this.overlayConfigs,
+    this.bottomConfigs,
     this.markerSeries,
     this.theme,
     this.onCrosshairAppeared,
+    this.onCrosshairDisappeared,
+    this.onCrosshairHover,
     this.onVisibleAreaChanged,
+    this.onQuoteAreaChanged,
     this.isLive = false,
     this.dataFitEnabled = false,
     this.opacity = 1.0,
     this.annotations,
-    this.chartAxisConfig,
+    this.chartAxisConfig = const ChartAxisConfig(),
+    this.showCrosshair = false,
+    this.indicatorsRepo,
+    this.msPerPx,
+    this.minIntervalWidth,
+    this.maxIntervalWidth,
+    this.dataFitPadding,
+    this.currentTickAnimationDuration,
+    this.quoteBoundsAnimationDuration,
+    this.showCurrentTickBlinkAnimation,
+    this.verticalPaddingFraction,
+    this.bottomChartTitleMargin,
+    this.showDataFitButton,
+    this.showScrollToLastTickButton,
+    this.loadingAnimationColor,
     Key? key,
   }) : super(key: key);
 
@@ -37,14 +71,18 @@ class Chart extends StatefulWidget {
   final DataSeries<Tick> mainSeries;
 
   /// List of overlay indicator series to add on chart beside the [mainSeries].
-  final List<Series>? overlaySeries;
+  final List<IndicatorConfig>? overlayConfigs;
 
   /// List of bottom indicator series to add on chart separate from the
   /// [mainSeries].
-  final List<Series>? bottomSeries;
+  final List<IndicatorConfig>? bottomConfigs;
 
   /// Open position marker series.
   final MarkerSeries? markerSeries;
+
+  /// Keep the reference to the drawing tools class for
+  /// sharing data between the DerivChart and the DrawingToolsDialog
+  final DrawingTools? drawingTools;
 
   /// Chart's controller
   final ChartController? controller;
@@ -59,8 +97,17 @@ class Chart extends StatefulWidget {
   /// Called when crosshair details appear after long press.
   final VoidCallback? onCrosshairAppeared;
 
+  /// Called when the crosshair is dismissed.
+  final VoidCallback? onCrosshairDisappeared;
+
+  /// Called when the crosshair cursor is hovered/moved.
+  final OnCrosshairHoverCallback? onCrosshairHover;
+
   /// Called when chart is scrolled or zoomed.
   final VisibleAreaChangedCallback? onVisibleAreaChanged;
+
+  /// Callback provided by library user.
+  final VisibleQuoteAreaChangedCallback? onQuoteAreaChanged;
 
   /// Chart's theme.
   final ChartTheme? theme;
@@ -81,7 +128,52 @@ class Chart extends StatefulWidget {
   final double opacity;
 
   /// Configurations for chart's axes.
-  final ChartAxisConfig? chartAxisConfig;
+  final ChartAxisConfig chartAxisConfig;
+
+  /// Whether the crosshair should be shown or not.
+  final bool showCrosshair;
+
+  /// Specifies the zoom level of the chart.
+  final double? msPerPx;
+
+  /// Specifies the minimum interval width
+  /// that is used for calculating the maximum msPerPx.
+  final double? minIntervalWidth;
+
+  /// Specifies the maximum interval width
+  /// that is used for calculating the maximum msPerPx.
+  final double? maxIntervalWidth;
+
+  /// Padding around data used in data-fit mode.
+  final EdgeInsets? dataFitPadding;
+
+  /// Duration of the current tick animated transition.
+  final Duration? currentTickAnimationDuration;
+
+  /// Duration of quote bounds animated transition.
+  final Duration? quoteBoundsAnimationDuration;
+
+  /// Whether to show current tick blink animation or not.
+  final bool? showCurrentTickBlinkAnimation;
+
+  /// Fraction of the chart's height taken by top or bottom padding.
+  /// Quote scaling (drag on quote area) is controlled by this variable.
+  final double? verticalPaddingFraction;
+
+  /// Specifies the margin to prevent overlap.
+  final EdgeInsets? bottomChartTitleMargin;
+
+  /// Whether the data fit button is shown or not.
+  final bool? showDataFitButton;
+
+  /// Whether to show the scroll to last tick button or not.
+  final bool? showScrollToLastTickButton;
+
+  /// The color of the loading animation.
+  final Color? loadingAnimationColor;
+
+  /// Chart's indicators
+  final Repository<IndicatorConfig>? indicatorsRepo;
 
   @override
   State<StatefulWidget> createState() => _ChartState();
@@ -92,6 +184,9 @@ class _ChartState extends State<Chart> with WidgetsBindingObserver {
   bool? _followCurrentTick;
   late ChartController _controller;
   late ChartTheme _chartTheme;
+  late List<Series>? bottomSeries;
+  late List<Series>? overlaySeries;
+  int? expandedIndex;
 
   @override
   void initState() {
@@ -110,6 +205,21 @@ class _ChartState extends State<Chart> with WidgetsBindingObserver {
     _controller = widget.controller ?? ChartController();
   }
 
+  List<Series>? _getIndicatorSeries(List<IndicatorConfig>? configs) {
+    if (configs == null) {
+      return null;
+    }
+
+    return configs
+        .map((IndicatorConfig indicatorConfig) => indicatorConfig.getSeries(
+              IndicatorInput(
+                widget.mainSeries.input,
+                widget.granularity,
+              ),
+            ))
+        .toList();
+  }
+
   void _initChartTheme() {
     _chartTheme = widget.theme ??
         (Theme.of(context).brightness == Brightness.dark
@@ -117,19 +227,63 @@ class _ChartState extends State<Chart> with WidgetsBindingObserver {
             : ChartDefaultLightTheme());
   }
 
+  void _onCrosshairHover(
+    Offset globalPosition,
+    Offset localPosition,
+    EpochToX epochToX,
+    QuoteToY quoteToY,
+    EpochFromX epochFromX,
+    QuoteFromY quoteFromY,
+  ) {
+    widget.onCrosshairHover?.call(
+      globalPosition,
+      localPosition,
+      epochToX,
+      quoteToY,
+      epochFromX,
+      quoteFromY,
+      null,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final ChartConfig chartConfig = ChartConfig(
       pipSize: widget.pipSize,
       granularity: widget.granularity,
+      chartAxisConfig: widget.chartAxisConfig,
     );
+
+    final List<Series>? overlaySeries =
+        _getIndicatorSeries(widget.overlayConfigs);
+
+    final List<Series>? bottomSeries =
+        _getIndicatorSeries(widget.bottomConfigs);
 
     final List<ChartData> chartDataList = <ChartData>[
       widget.mainSeries,
-      if (widget.overlaySeries != null) ...widget.overlaySeries!,
-      if (widget.bottomSeries != null) ...widget.bottomSeries!,
+      if (overlaySeries != null) ...overlaySeries,
+      if (bottomSeries != null) ...bottomSeries,
       if (widget.annotations != null) ...widget.annotations!,
     ];
+
+    _controller
+      ..getSeriesList = (() => <Series>[
+            if (overlaySeries != null) ...overlaySeries,
+            if (bottomSeries != null) ...bottomSeries,
+          ])
+      ..getConfigsList = (() => <IndicatorConfig>[
+            if (widget.overlayConfigs != null) ...?widget.overlayConfigs,
+            if (widget.bottomConfigs != null) ...?widget.bottomConfigs,
+          ]);
+
+    final bool isExpanded = expandedIndex != null;
+
+    final Duration currentTickAnimationDuration =
+        widget.currentTickAnimationDuration ?? _defaultDuration;
+
+    final Duration quoteBoundsAnimationDuration =
+        widget.quoteBoundsAnimationDuration ?? _defaultDuration;
 
     return MultiProvider(
       providers: <SingleChildWidget>[
@@ -139,7 +293,7 @@ class _ChartState extends State<Chart> with WidgetsBindingObserver {
       child: Ink(
         color: _chartTheme.base08Color,
         child: GestureManager(
-          child: XAxis(
+          child: XAxisWrapper(
             maxEpoch: chartDataList.getMaxEpoch(),
             minEpoch: chartDataList.getMinEpoch(),
             entries: widget.mainSeries.input,
@@ -147,40 +301,135 @@ class _ChartState extends State<Chart> with WidgetsBindingObserver {
             onVisibleAreaChanged: _onVisibleAreaChanged,
             isLive: widget.isLive,
             startWithDataFitMode: widget.dataFitEnabled,
+            msPerPx: widget.msPerPx,
+            minIntervalWidth: widget.minIntervalWidth,
+            maxIntervalWidth: widget.maxIntervalWidth,
+            dataFitPadding: widget.dataFitPadding,
+            scrollAnimationDuration: currentTickAnimationDuration,
             child: Column(
               children: <Widget>[
                 Expanded(
                   flex: 3,
                   child: MainChart(
+                    drawingTools: widget.drawingTools,
                     controller: _controller,
                     mainSeries: widget.mainSeries,
-                    overlaySeries: widget.overlaySeries,
+                    overlaySeries: overlaySeries,
                     annotations: widget.annotations,
                     markerSeries: widget.markerSeries,
                     pipSize: widget.pipSize,
                     onCrosshairAppeared: widget.onCrosshairAppeared,
+                    onQuoteAreaChanged: widget.onQuoteAreaChanged,
                     isLive: widget.isLive,
                     showLoadingAnimationForHistoricalData:
                         !widget.dataFitEnabled,
-                    showDataFitButton: widget.dataFitEnabled,
+                    showDataFitButton:
+                        widget.showDataFitButton ?? widget.dataFitEnabled,
+                    showScrollToLastTickButton:
+                        widget.showScrollToLastTickButton ?? true,
                     opacity: widget.opacity,
                     chartAxisConfig: widget.chartAxisConfig,
+                    verticalPaddingFraction: widget.verticalPaddingFraction,
+                    showCrosshair: widget.showCrosshair,
+                    onCrosshairDisappeared: widget.onCrosshairDisappeared,
+                    onCrosshairHover: _onCrosshairHover,
+                    loadingAnimationColor: widget.loadingAnimationColor,
+                    currentTickAnimationDuration: currentTickAnimationDuration,
+                    quoteBoundsAnimationDuration: quoteBoundsAnimationDuration,
+                    showCurrentTickBlinkAnimation:
+                        widget.showCurrentTickBlinkAnimation ?? true,
                   ),
                 ),
-                if (widget.bottomSeries?.isNotEmpty ?? false)
-                  ...widget.bottomSeries!
-                      .map((Series series) => Expanded(
-                              child: BottomChart(
-                            series: series,
-                            pipSize: widget.pipSize,
-                          )))
-                      .toList()
+                if (bottomSeries?.isNotEmpty ?? false)
+                  ...bottomSeries!.mapIndexed((int index, Series series) {
+                    if (isExpanded && expandedIndex != index) {
+                      return const SizedBox.shrink();
+                    }
+
+                    return Expanded(
+                      flex: isExpanded ? bottomSeries.length : 1,
+                      child: BottomChart(
+                        series: series,
+                        granularity: widget.granularity,
+                        pipSize: widget.bottomConfigs?[index].pipSize ??
+                            widget.pipSize,
+                        title: widget.bottomConfigs![index].title,
+                        currentTickAnimationDuration:
+                            currentTickAnimationDuration,
+                        quoteBoundsAnimationDuration:
+                            quoteBoundsAnimationDuration,
+                        bottomChartTitleMargin: widget.bottomChartTitleMargin,
+                        onRemove: () => _onRemove(widget.bottomConfigs![index]),
+                        onEdit: () => _onEdit(widget.bottomConfigs![index]),
+                        onExpandToggle: () {
+                          setState(() {
+                            expandedIndex =
+                                expandedIndex != index ? index : null;
+                          });
+                        },
+                        onSwap: (int offset) => _onSwap(
+                            widget.bottomConfigs![index],
+                            widget.bottomConfigs![index + offset]),
+                        onCrosshairDisappeared: widget.onCrosshairDisappeared,
+                        onCrosshairHover: (
+                          Offset globalPosition,
+                          Offset localPosition,
+                          EpochToX epochToX,
+                          QuoteToY quoteToY,
+                          EpochFromX epochFromX,
+                          QuoteFromY quoteFromY,
+                        ) =>
+                            widget.onCrosshairHover?.call(
+                          globalPosition,
+                          localPosition,
+                          epochToX,
+                          quoteToY,
+                          epochFromX,
+                          quoteFromY,
+                          widget.bottomConfigs![index],
+                        ),
+                        isExpanded: isExpanded,
+                        showCrosshair: widget.showCrosshair,
+                        showExpandedIcon: bottomSeries.length > 1,
+                        showMoveUpIcon: !isExpanded &&
+                            bottomSeries.length > 1 &&
+                            index != 0,
+                        showMoveDownIcon: !isExpanded &&
+                            bottomSeries.length > 1 &&
+                            index != bottomSeries.length - 1,
+                      ),
+                    );
+                  }).toList()
               ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  void _onEdit(IndicatorConfig config) {
+    if (widget.indicatorsRepo != null) {
+      final int index = widget.indicatorsRepo!.items.indexOf(config);
+      widget.indicatorsRepo!.editAt(index);
+    }
+  }
+
+  void _onRemove(IndicatorConfig config) {
+    expandedIndex = null;
+
+    if (widget.indicatorsRepo != null) {
+      final int index = widget.indicatorsRepo!.items.indexOf(config);
+      widget.indicatorsRepo!.removeAt(index);
+    }
+  }
+
+  void _onSwap(IndicatorConfig config1, IndicatorConfig config2) {
+    if (widget.indicatorsRepo != null) {
+      final int index1 = widget.indicatorsRepo!.items.indexOf(config1);
+      final int index2 = widget.indicatorsRepo!.items.indexOf(config2);
+      widget.indicatorsRepo!.swap(index1, index2);
+    }
   }
 
   void _onVisibleAreaChanged(int leftBoundEpoch, int rightBoundEpoch) {
@@ -236,6 +485,17 @@ class _ChartState extends State<Chart> with WidgetsBindingObserver {
       if (widget.mainSeries.entries!.first.epoch !=
           oldWidget.mainSeries.entries!.first.epoch) {
         _controller.onScrollToLastTick?.call(animate: false);
+      }
+    }
+
+    // Check if the the expanded bottom indicator is moved/removed.
+    if (expandedIndex != null &&
+        oldWidget.bottomConfigs?.length != widget.bottomConfigs?.length &&
+        expandedIndex! < (oldWidget.bottomConfigs?.length ?? 0)) {
+      final int? newIndex = widget.bottomConfigs
+          ?.indexOf(oldWidget.bottomConfigs![expandedIndex!]);
+      if (newIndex != expandedIndex) {
+        expandedIndex = newIndex == -1 ? null : newIndex;
       }
     }
   }

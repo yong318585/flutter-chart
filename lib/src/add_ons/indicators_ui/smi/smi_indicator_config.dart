@@ -1,9 +1,11 @@
+import 'package:deriv_chart/src/add_ons/indicators_ui/oscillator_lines/oscillator_lines_config.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/chart_series/indicators_series/ma_series.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/chart_series/indicators_series/models/indicator_options.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/chart_series/indicators_series/models/smi_options.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/chart_series/indicators_series/smi_series.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/chart_series/series.dart';
 import 'package:deriv_chart/src/models/indicator_input.dart';
+import 'package:deriv_chart/src/theme/painting_styles/line_style.dart';
 import 'package:flutter/material.dart';
 import 'package:json_annotation/json_annotation.dart';
 
@@ -22,12 +24,26 @@ class SMIIndicatorConfig extends IndicatorConfig {
     this.period = 10,
     this.smoothingPeriod = 3,
     this.doubleSmoothingPeriod = 3,
-    this.overboughtValue = 40,
-    this.oversoldValue = -40,
     this.signalPeriod = 10,
+    this.smiOscillatorLimits = const OscillatorLinesConfig(
+      oversoldValue: -40,
+      overboughtValue: 40,
+      overboughtStyle: LineStyle(),
+      oversoldStyle: LineStyle(),
+    ),
     this.maType = MovingAverageType.exponential,
     this.showZones = true,
-  }) : super(isOverlay: false);
+    this.lineStyle,
+    this.signalLineStyle,
+    int pipSize = 4,
+    bool showLastIndicator = false,
+    String? title,
+  }) : super(
+          isOverlay: false,
+          pipSize: pipSize,
+          showLastIndicator: showLastIndicator,
+          title: title ?? SMIIndicatorConfig.name,
+        );
 
   /// Initializes from JSON.
   factory SMIIndicatorConfig.fromJson(Map<String, dynamic> json) =>
@@ -55,14 +71,17 @@ class SMIIndicatorConfig extends IndicatorConfig {
   /// /// The Moving Average type of SMI signal (D%).
   final MovingAverageType maType;
 
-  /// Overbought value.
-  final double overboughtValue;
-
-  /// Oversold value.
-  final double oversoldValue;
+  /// Oscillator limit lines
+  final OscillatorLinesConfig smiOscillatorLimits;
 
   /// Whether to show zones (intersection between indicator and overbought/sold).
   final bool showZones;
+
+  ///  Line style.
+  final LineStyle? lineStyle;
+
+  /// Signal line style.
+  final LineStyle? signalLineStyle;
 
   @override
   Series getSeries(IndicatorInput indicatorInput) => SMISeries(
@@ -72,9 +91,15 @@ class SMIIndicatorConfig extends IndicatorConfig {
           smoothingPeriod: smoothingPeriod,
           doubleSmoothingPeriod: doubleSmoothingPeriod,
           signalOptions: MAOptions(period: signalPeriod, type: maType),
+          lineStyle: lineStyle,
+          signalLineStyle: signalLineStyle,
+          showLastIndicator: showLastIndicator,
+          pipSize: pipSize,
         ),
-        overboughtValue: overboughtValue,
-        oversoldValue: oversoldValue,
+        overboughtValue: smiOscillatorLimits.overboughtValue,
+        oversoldValue: smiOscillatorLimits.oversoldValue,
+        overboughtStyle: smiOscillatorLimits.overboughtStyle,
+        oversoldStyle: smiOscillatorLimits.oversoldStyle,
       );
 
   @override
