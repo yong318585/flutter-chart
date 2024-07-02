@@ -1,4 +1,5 @@
 import 'package:deriv_chart/src/deriv_chart/chart/custom_painters/chart_data_painter.dart';
+import 'package:deriv_chart/src/deriv_chart/chart/y_axis/y_axis_config.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/y_axis/y_grid_label_painter.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/y_axis/y_grid_label_painter_web.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/y_axis/y_grid_line_painter.dart';
@@ -373,26 +374,32 @@ class BasicChartState<T extends BasicChart> extends State<T>
         },
       );
 
-  Widget _buildQuoteGridLine(List<double> gridLineQuotes) =>
-      MultipleAnimatedBuilder(
-        animations: getQuoteGridAnimations(),
-        builder: (BuildContext context, _) => RepaintBoundary(
-          child: CustomPaint(
-            painter: YGridLinePainter(
-              gridLineQuotes: gridLineQuotes,
-              quoteToCanvasY: chartQuoteToCanvasY,
-              style: context.watch<ChartTheme>().gridStyle,
-              labelWidth: (gridLineQuotes.isNotEmpty)
-                  ? labelWidth(
-                      gridLineQuotes.first,
-                      context.watch<ChartTheme>().gridStyle.yLabelStyle,
-                      widget.pipSize,
-                    )
-                  : 0,
-            ),
+  Widget _buildQuoteGridLine(List<double> gridLineQuotes) {
+    final double calculatedLabelWidth = (gridLineQuotes.isNotEmpty)
+        ? labelWidth(
+            gridLineQuotes.first,
+            context.watch<ChartTheme>().gridStyle.yLabelStyle,
+            widget.pipSize,
+          )
+        : 0;
+
+    YAxisConfig.instance.setLabelWidth(calculatedLabelWidth +
+        context.watch<ChartTheme>().gridStyle.labelHorizontalPadding * 2);
+
+    return MultipleAnimatedBuilder(
+      animations: getQuoteGridAnimations(),
+      builder: (BuildContext context, _) => RepaintBoundary(
+        child: CustomPaint(
+          painter: YGridLinePainter(
+            gridLineQuotes: gridLineQuotes,
+            quoteToCanvasY: chartQuoteToCanvasY,
+            style: context.watch<ChartTheme>().gridStyle,
+            labelWidth: calculatedLabelWidth,
           ),
         ),
-      );
+      ),
+    );
+  }
 
   /// Returns a list of animation controllers to animate the top quote grid.
   List<Listenable> getQuoteGridAnimations() => <Listenable>[
