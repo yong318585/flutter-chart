@@ -32,11 +32,13 @@ class BollingerBandsIndicatorConfig extends MAIndicatorConfig {
     this.fillColor = Colors.white12,
     this.showChannelFill = true,
     bool showLastIndicator = false,
+    super.number,
   }) : super(
           period: period,
           movingAverageType: movingAverageType,
           fieldType: fieldType,
           showLastIndicator: showLastIndicator,
+          title: BollingerBandsIndicatorConfig.name,
         );
 
   /// Initializes from JSON.
@@ -69,6 +71,17 @@ class BollingerBandsIndicatorConfig extends MAIndicatorConfig {
   final bool showChannelFill;
 
   @override
+  String get shortTitle => 'BB';
+
+  @override
+  String get configSummary => '$period, ${fieldType[0].toUpperCase()}, '
+      '$standardDeviation, ${movingAverageType.shortTitle}, '
+      '${showChannelFill ? 'Y' : 'N'}';
+
+  @override
+  String get title => 'Bollinger Bands';
+
+  @override
   Series getSeries(IndicatorInput indicatorInput) =>
       BollingerBandSeries.fromIndicator(
         IndicatorConfig.supportedFieldTypes[fieldType]!(indicatorInput),
@@ -94,5 +107,38 @@ class BollingerBandsIndicatorConfig extends MAIndicatorConfig {
         config: this,
         updateIndicator: updateIndicator,
         deleteIndicator: deleteIndicator,
+      );
+
+  @override
+  BollingerBandsIndicatorConfig copyWith({
+    int? period,
+    MovingAverageType? movingAverageType,
+    String? fieldType,
+    double? standardDeviation,
+    LineStyle? upperLineStyle,
+    LineStyle? middleLineStyle,
+    LineStyle? lowerLineStyle,
+    Color? fillColor,
+    bool? showChannelFill,
+    bool? showLastIndicator,
+    int? number,
+    int? pipSize,
+    bool? isOverlay,
+    LineStyle? lineStyle,
+    int? offset,
+    String? title,
+  }) =>
+      BollingerBandsIndicatorConfig(
+        period: period ?? this.period,
+        movingAverageType: movingAverageType ?? this.movingAverageType,
+        fieldType: fieldType ?? this.fieldType,
+        standardDeviation: standardDeviation ?? this.standardDeviation,
+        upperLineStyle: upperLineStyle ?? this.upperLineStyle,
+        middleLineStyle: middleLineStyle ?? this.middleLineStyle,
+        lowerLineStyle: lowerLineStyle ?? this.lowerLineStyle,
+        fillColor: fillColor ?? this.fillColor,
+        showChannelFill: showChannelFill ?? this.showChannelFill,
+        showLastIndicator: showLastIndicator ?? this.showLastIndicator,
+        number: number ?? this.number,
       );
 }

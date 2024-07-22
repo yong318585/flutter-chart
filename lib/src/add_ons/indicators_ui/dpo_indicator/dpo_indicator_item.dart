@@ -32,7 +32,8 @@ class DPOIndicatorItem extends IndicatorItem {
 /// DpoIndicatorItem State class
 class DPOIndicatorItemState extends MAIndicatorItemState {
   @override
-  DPOIndicatorConfig createIndicatorConfig() => DPOIndicatorConfig(
+  DPOIndicatorConfig updateIndicatorConfig() =>
+      (widget.config as DPOIndicatorConfig).copyWith(
         period: getCurrentPeriod(),
         movingAverageType: getCurrentType(),
         fieldType: getCurrentField(),

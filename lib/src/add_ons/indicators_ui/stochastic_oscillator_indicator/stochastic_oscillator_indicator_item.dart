@@ -39,8 +39,8 @@ class StochasticOscillatorIndicatorItemState
   bool? _showZones;
 
   @override
-  StochasticOscillatorIndicatorConfig createIndicatorConfig() =>
-      StochasticOscillatorIndicatorConfig(
+  StochasticOscillatorIndicatorConfig updateIndicatorConfig() =>
+      (widget.config as StochasticOscillatorIndicatorConfig).copyWith(
         period: _currentPeriod,
         overBoughtPrice: _currentOverBoughtPrice,
         overSoldPrice: _currentOverSoldPrice,

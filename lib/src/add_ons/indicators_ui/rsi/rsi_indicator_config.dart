@@ -31,6 +31,7 @@ class RSIIndicatorConfig extends IndicatorConfig {
     int pipSize = 4,
     bool showLastIndicator = false,
     String? title,
+    super.number,
   }) : super(
           isOverlay: false,
           pipSize: pipSize,
@@ -68,6 +69,17 @@ class RSIIndicatorConfig extends IndicatorConfig {
   /// Whether to paint [oscillatorLinesConfig] zones fill.
   final bool showZones;
 
+  /// Indicator config summary
+  @override
+  String get configSummary => '$period, ${fieldType[0].toUpperCase()}, '
+      '${showZones ? 'Y' : 'N'}';
+
+  @override
+  String get title => 'Relative Strength Index (RSI)';
+
+  @override
+  String get shortTitle => 'RSI';
+
   @override
   Series getSeries(IndicatorInput indicatorInput) => RSISeries.fromIndicator(
         IndicatorConfig.supportedFieldTypes[fieldType]!(indicatorInput),
@@ -89,5 +101,32 @@ class RSIIndicatorConfig extends IndicatorConfig {
         config: this,
         updateIndicator: updateIndicator,
         deleteIndicator: deleteIndicator,
+      );
+
+  @override
+  RSIIndicatorConfig copyWith({
+    int? period,
+    String? fieldType,
+    LineStyle? lineStyle,
+    bool? pinLabels,
+    OscillatorLinesConfig? oscillatorLinesConfig,
+    bool? showZones,
+    int? pipSize,
+    bool? showLastIndicator,
+    String? title,
+    int? number,
+  }) =>
+      RSIIndicatorConfig(
+        period: period ?? this.period,
+        fieldType: fieldType ?? this.fieldType,
+        lineStyle: lineStyle ?? this.lineStyle,
+        pinLabels: pinLabels ?? this.pinLabels,
+        oscillatorLinesConfig:
+            oscillatorLinesConfig ?? this.oscillatorLinesConfig,
+        showZones: showZones ?? this.showZones,
+        pipSize: pipSize ?? this.pipSize,
+        showLastIndicator: showLastIndicator ?? this.showLastIndicator,
+        title: title ?? this.title,
+        number: number ?? this.number,
       );
 }

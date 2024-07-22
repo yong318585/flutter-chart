@@ -22,6 +22,7 @@ class ParabolicSARConfig extends IndicatorConfig {
     this.maxAccelerationFactor = 0.2,
     this.scatterStyle = const ScatterStyle(),
     String? title,
+    super.number,
   }) : super(title: title ?? ParabolicSARConfig.name);
 
   /// Initializes from JSON.
@@ -60,5 +61,25 @@ class ParabolicSARConfig extends IndicatorConfig {
         config: this,
         updateIndicator: updateIndicator,
         deleteIndicator: deleteIndicator,
+      );
+
+  @override
+  ParabolicSARConfig copyWith({
+    double? minAccelerationFactor,
+    double? maxAccelerationFactor,
+    ScatterStyle? scatterStyle,
+    String? title,
+    int? number,
+    bool? showLastIndicator,
+    int? pipSize,
+  }) =>
+      ParabolicSARConfig(
+        minAccelerationFactor:
+            minAccelerationFactor ?? this.minAccelerationFactor,
+        maxAccelerationFactor:
+            maxAccelerationFactor ?? this.maxAccelerationFactor,
+        scatterStyle: scatterStyle ?? this.scatterStyle,
+        title: title ?? this.title,
+        number: number ?? this.number,
       );
 }

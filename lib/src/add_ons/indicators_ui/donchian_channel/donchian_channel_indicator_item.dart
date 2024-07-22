@@ -38,8 +38,8 @@ class DonchianChannelIndicatorItemState
   bool? _channelFill;
 
   @override
-  DonchianChannelIndicatorConfig createIndicatorConfig() =>
-      DonchianChannelIndicatorConfig(
+  DonchianChannelIndicatorConfig updateIndicatorConfig() =>
+      (widget.config as DonchianChannelIndicatorConfig).copyWith(
         highPeriod: _getCurrentHighPeriod(),
         lowPeriod: _getCurrentLowPeriod(),
         showChannelFill: _getCurrentFill(),
