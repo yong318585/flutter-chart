@@ -32,4 +32,18 @@ class OscillatorLinesConfig {
 
   /// Parses this instance of [OscillatorLinesConfig] into a Map<String,dynamic>
   Map<String, dynamic> toJson() => _$OscillatorLinesConfigToJson(this);
+
+  /// copyWith implementation for [OscillatorLinesConfig]
+  OscillatorLinesConfig copyWith({
+    double? overboughtValue,
+    double? oversoldValue,
+    LineStyle? overboughtStyle,
+    LineStyle? oversoldStyle,
+  }) =>
+      OscillatorLinesConfig(
+        overboughtValue: overboughtValue ?? this.overboughtValue,
+        oversoldValue: oversoldValue ?? this.oversoldValue,
+        oversoldStyle: oversoldStyle ?? this.oversoldStyle,
+        overboughtStyle: overboughtStyle ?? this.overboughtStyle,
+      );
 }
