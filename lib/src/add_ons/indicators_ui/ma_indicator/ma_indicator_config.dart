@@ -27,6 +27,7 @@ class MAIndicatorConfig extends IndicatorConfig {
     int pipSize = 4,
     bool showLastIndicator = false,
     String? title,
+    super.number,
   })  : period = period ?? 50,
         movingAverageType = movingAverageType ?? MovingAverageType.simple,
         fieldType = fieldType ?? 'close',
@@ -67,6 +68,16 @@ class MAIndicatorConfig extends IndicatorConfig {
   final int offset;
 
   @override
+  String get shortTitle => 'MA';
+
+  @override
+  String get title => 'Moving Average';
+
+  @override
+  String get configSummary => '$period, ${fieldType[0].toUpperCase()}, '
+      '${movingAverageType.shortTitle}, $offset';
+
+  @override
   Series getSeries(IndicatorInput indicatorInput) => MASeries.fromIndicator(
         IndicatorConfig.supportedFieldTypes[fieldType]!(indicatorInput),
         MAOptions(
@@ -87,5 +98,31 @@ class MAIndicatorConfig extends IndicatorConfig {
         config: this,
         updateIndicator: updateIndicator,
         deleteIndicator: deleteIndicator,
+      );
+
+  @override
+  MAIndicatorConfig copyWith({
+    int? period,
+    MovingAverageType? movingAverageType,
+    String? fieldType,
+    LineStyle? lineStyle,
+    int? offset,
+    bool? isOverlay,
+    int? pipSize,
+    bool? showLastIndicator,
+    String? title,
+    int? number,
+  }) =>
+      MAIndicatorConfig(
+        period: period ?? this.period,
+        movingAverageType: movingAverageType ?? this.movingAverageType,
+        fieldType: fieldType ?? this.fieldType,
+        lineStyle: lineStyle ?? this.lineStyle,
+        offset: offset ?? this.offset,
+        isOverlay: isOverlay ?? this.isOverlay,
+        pipSize: pipSize ?? this.pipSize,
+        showLastIndicator: showLastIndicator ?? this.showLastIndicator,
+        title: title ?? this.title,
+        number: number ?? this.number,
       );
 }

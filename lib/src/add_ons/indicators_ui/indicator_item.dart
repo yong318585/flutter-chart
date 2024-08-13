@@ -17,6 +17,7 @@ abstract class IndicatorItem extends StatefulWidget {
   }) : super(key: key);
 
   /// Title
+  @Deprecated('The widget uses config.shortTitle instead.')
   final String title;
 
   /// Contains indicator configuration.
@@ -54,7 +55,11 @@ abstract class IndicatorItemState<T extends IndicatorConfig>
   @override
   Widget build(BuildContext context) => ListTile(
         contentPadding: const EdgeInsets.all(0),
-        leading: Text(widget.title, style: const TextStyle(fontSize: 10)),
+        leading: Text(
+          '${widget.config.shortTitle}'
+          ' ${widget.config.number > 0 ? widget.config.number : ''}',
+          style: const TextStyle(fontSize: 10),
+        ),
         title: getIndicatorOptions(),
         trailing: IconButton(
           icon: const Icon(Icons.delete),
@@ -64,14 +69,14 @@ abstract class IndicatorItemState<T extends IndicatorConfig>
 
   /// Updates indicator based on its current config values.
   void updateIndicator() =>
-      widget.updateIndicator.call(createIndicatorConfig());
+      widget.updateIndicator.call(updateIndicatorConfig());
 
   /// Removes this indicator.
   void removeIndicator() => widget.deleteIndicator.call();
 
-  /// Returns the [IndicatorConfig] which can be used to create the Series for
-  /// this indicator.
-  T createIndicatorConfig();
+  /// Updates the current [widget.config] with the latest values set in menus
+  /// options and returns the updated config.
+  T updateIndicatorConfig();
 
   /// Creates the menu options widget for this indicator.
   Widget getIndicatorOptions();

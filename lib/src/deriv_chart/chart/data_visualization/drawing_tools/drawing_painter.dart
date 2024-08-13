@@ -7,6 +7,7 @@ import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/drawing_too
 import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/drawing_tools/drawing.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/drawing_tools/drawing_data.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/x_axis/x_axis_model.dart';
+import 'package:deriv_chart/src/deriv_chart/chart/y_axis/y_axis_config.dart';
 import 'package:deriv_chart/src/misc/debounce.dart';
 import 'package:deriv_chart/src/models/tick.dart';
 import 'package:deriv_chart/src/theme/chart_theme.dart';
@@ -394,7 +395,26 @@ class _DrawingPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     for (final Drawing drawingPart in drawingData.drawingParts) {
-      drawingPart.onPaint(
+      YAxisConfig.instance.yAxisClipping(canvas, size, () {
+        drawingPart.onPaint(
+          canvas,
+          size,
+          theme,
+          epochFromX,
+          quoteFromY,
+          epochToX,
+          quoteToY,
+          config,
+          drawingData,
+          series,
+          updatePositionCallback,
+          draggableStartPoint,
+          draggableMiddlePoint: draggableMiddlePoint,
+          draggableEndPoint: draggableEndPoint,
+        );
+      });
+
+      drawingPart.onLabelPaint(
         canvas,
         size,
         theme,
@@ -405,10 +425,6 @@ class _DrawingPainter extends CustomPainter {
         config,
         drawingData,
         series,
-        updatePositionCallback,
-        draggableStartPoint,
-        draggableMiddlePoint: draggableMiddlePoint,
-        draggableEndPoint: draggableEndPoint,
       );
     }
   }

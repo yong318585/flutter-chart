@@ -8,6 +8,7 @@ import 'package:deriv_chart/src/deriv_chart/chart/helpers/paint_functions/create
 import 'package:deriv_chart/src/deriv_chart/chart/helpers/paint_functions/paint_dot.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/helpers/paint_functions/paint_line.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/helpers/paint_functions/paint_text.dart';
+import 'package:deriv_chart/src/deriv_chart/chart/y_axis/y_axis_config.dart';
 import 'package:deriv_chart/src/theme/painting_styles/barrier_style.dart';
 import 'package:flutter/material.dart';
 
@@ -112,7 +113,11 @@ class HorizontalBarrierPainter<T extends HorizontalBarrier>
 
     // Blinking dot.
     if (style.hasBlinkingDot && dotX != null) {
-      paintBlinkingDot(canvas, dotX, y, animationInfo, style.blinkingDotColor);
+      // to hide the blinking spot on yAxis
+      YAxisConfig.instance.yAxisClipping(canvas, size, () {
+        paintBlinkingDot(
+            canvas, dotX!, y, animationInfo, style.blinkingDotColor);
+      });
     }
 
     final TextPainter valuePainter = makeTextPainter(

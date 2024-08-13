@@ -1,5 +1,4 @@
 import 'package:deriv_chart/generated/l10n.dart';
-import 'package:deriv_chart/deriv_chart.dart';
 import 'package:deriv_chart/src/add_ons/indicators_ui/widgets/field_widget.dart';
 
 import 'package:flutter/material.dart';
@@ -40,7 +39,8 @@ class ADXIndicatorItemState extends IndicatorItemState<ADXIndicatorConfig> {
   bool? _showSeries;
 
   @override
-  ADXIndicatorConfig createIndicatorConfig() => ADXIndicatorConfig(
+  ADXIndicatorConfig updateIndicatorConfig() =>
+      (widget.config as ADXIndicatorConfig).copyWith(
         period: _currentPeriod,
         smoothingPeriod: _currentSmoothingPeriod,
         showChannelFill: _currentChannelFill,

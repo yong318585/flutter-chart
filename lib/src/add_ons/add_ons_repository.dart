@@ -29,6 +29,10 @@ class AddOnsRepository<T extends AddOnConfig> extends ChangeNotifier
 
   /// List containing addOns
   final List<T> _addOns;
+  // TODO(Ramin): once we handle setting [AddOnConfig.number] inside this class
+  // we can use [runtimeType + number] as the id for config objects and can
+  // change this to Map<String, bool> to store hidden status.
+  final List<bool> _hiddenStatus = <bool>[];
   SharedPreferences? _prefs;
 
   /// List of indicators.
@@ -50,6 +54,7 @@ class AddOnsRepository<T extends AddOnConfig> extends ChangeNotifier
     sharedPrefKey = symbol;
 
     items.clear();
+    _hiddenStatus.clear();
 
     if (!prefs.containsKey(addOnsKey)) {
       // No saved indicators or drawing tools.
@@ -66,6 +71,7 @@ class AddOnsRepository<T extends AddOnConfig> extends ChangeNotifier
     for (final Map<String, dynamic> decodedAddon in decodedAddons) {
       final T addOnConfig = createAddOn.call(decodedAddon);
       items.add(addOnConfig);
+      _hiddenStatus.add(false);
     }
   }
 
@@ -73,6 +79,7 @@ class AddOnsRepository<T extends AddOnConfig> extends ChangeNotifier
   @override
   void add(T addOnConfig) {
     items.add(addOnConfig);
+    _hiddenStatus.add(false);
     _writeToPrefs();
     notifyListeners();
   }
@@ -102,6 +109,7 @@ class AddOnsRepository<T extends AddOnConfig> extends ChangeNotifier
       return;
     }
     items.removeAt(index);
+    _hiddenStatus.removeAt(index);
     _writeToPrefs();
     notifyListeners();
   }
@@ -111,6 +119,7 @@ class AddOnsRepository<T extends AddOnConfig> extends ChangeNotifier
   @override
   void clear() {
     items.clear();
+    _hiddenStatus.clear();
     _writeToPrefs();
     notifyListeners();
   }
@@ -119,6 +128,7 @@ class AddOnsRepository<T extends AddOnConfig> extends ChangeNotifier
   @override
   void swap(int index1, int index2) {
     items.swap(index1, index2);
+    _hiddenStatus.swap(index1, index2);
     _writeToPrefs();
     notifyListeners();
   }
@@ -131,4 +141,14 @@ class AddOnsRepository<T extends AddOnConfig> extends ChangeNotifier
       );
     }
   }
+
+  /// Updates the hidden status of an indicator or drawing tool.
+  @override
+  void updateHiddenStatus({required int index, required bool hidden}) {
+    _hiddenStatus[index] = hidden;
+    notifyListeners();
+  }
+
+  @override
+  bool getHiddenStatus(int index) => _hiddenStatus[index];
 }

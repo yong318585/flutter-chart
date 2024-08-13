@@ -1,3 +1,4 @@
+import 'package:deriv_chart/src/add_ons/extensions.dart';
 import 'package:deriv_chart/src/add_ons/indicators_ui/aroon/aroon_indicator_config.dart';
 import 'package:deriv_chart/src/add_ons/indicators_ui/commodity_channel_index/cci_indicator_config.dart';
 import 'package:deriv_chart/src/add_ons/indicators_ui/stochastic_oscillator_indicator/stochastic_oscillator_indicator_config.dart';
@@ -152,7 +153,12 @@ class _IndicatorsDialogState extends State<IndicatorsDialog> {
                 child: const Text('Add'),
                 onPressed: _selectedIndicator != null
                     ? () {
-                        repo.add(_selectedIndicator!);
+                        final IndicatorConfig config = _selectedIndicator!;
+                        // TODO(Ramin): later this will handled internally by
+                        // the repository itself.
+                        final int postFixNumber =
+                            repo.getNumberForNewAddOn(config);
+                        repo.add(config.copyWith(number: postFixNumber));
                         setState(() {});
                       }
                     : null,

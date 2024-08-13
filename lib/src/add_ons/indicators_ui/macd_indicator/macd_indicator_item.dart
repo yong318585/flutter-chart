@@ -1,4 +1,4 @@
-import 'package:deriv_chart/deriv_chart.dart';
+import 'package:deriv_chart/generated/l10n.dart';
 import 'package:flutter/material.dart';
 
 import '../callbacks.dart';
@@ -35,7 +35,8 @@ class MACDIndicatorItemState extends IndicatorItemState<MACDIndicatorConfig> {
   int? _signalPeriod;
 
   @override
-  MACDIndicatorConfig createIndicatorConfig() => MACDIndicatorConfig(
+  MACDIndicatorConfig updateIndicatorConfig() =>
+      (widget.config as MACDIndicatorConfig).copyWith(
         fastMAPeriod: _currentFastMAPeriod,
         slowMAPeriod: _currentSlowMAPeriod,
         signalPeriod: _currentSignalPeriod,

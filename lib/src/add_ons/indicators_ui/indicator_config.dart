@@ -38,6 +38,7 @@ abstract class IndicatorConfig extends AddOnConfig {
     bool isOverlay = true,
     this.showLastIndicator = false,
     this.pipSize = 4,
+    super.number,
   }) : super(isOverlay: isOverlay);
 
   /// Creates a concrete indicator config from JSON.
@@ -109,6 +110,12 @@ abstract class IndicatorConfig extends AddOnConfig {
   /// Key of indicator name property in JSON.
   static const String nameKey = 'name';
 
+  /// Indicator config summary
+  String get configSummary => '';
+
+  /// Short display title.
+  String get shortTitle => title;
+
   /// Indicators supported field types
   static final Map<String, FieldIndicatorBuilder> supportedFieldTypes =
       <String, FieldIndicatorBuilder>{
@@ -138,4 +145,12 @@ abstract class IndicatorConfig extends AddOnConfig {
     UpdateIndicator updateIndicator,
     VoidCallback deleteIndicator,
   );
+
+  /// Creates a copy of this instance with given parameters.
+  IndicatorConfig copyWith({
+    String? title,
+    bool? showLastIndicator,
+    int? pipSize,
+    int? number,
+  });
 }

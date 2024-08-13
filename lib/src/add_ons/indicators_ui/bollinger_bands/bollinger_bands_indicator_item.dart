@@ -1,4 +1,4 @@
-import 'package:deriv_chart/deriv_chart.dart';
+import 'package:deriv_chart/generated/l10n.dart';
 import 'package:deriv_chart/src/add_ons/indicators_ui/ma_indicator/ma_indicator_item.dart';
 import 'package:flutter/material.dart';
 
@@ -35,8 +35,8 @@ class BollingerBandsIndicatorItemState extends MAIndicatorItemState {
   double? _standardDeviation;
 
   @override
-  BollingerBandsIndicatorConfig createIndicatorConfig() =>
-      BollingerBandsIndicatorConfig(
+  BollingerBandsIndicatorConfig updateIndicatorConfig() =>
+      (widget.config as BollingerBandsIndicatorConfig).copyWith(
         period: getCurrentPeriod(),
         movingAverageType: getCurrentType(),
         standardDeviation: _getCurrentStandardDeviation(),

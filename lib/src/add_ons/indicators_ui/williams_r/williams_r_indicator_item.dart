@@ -1,5 +1,4 @@
 import 'package:deriv_chart/generated/l10n.dart';
-import 'package:deriv_chart/deriv_chart.dart';
 
 import 'package:flutter/material.dart';
 
@@ -41,13 +40,14 @@ class WilliamsRIndicatorItemState
   bool? _showZones;
 
   @override
-  WilliamsRIndicatorConfig createIndicatorConfig() => WilliamsRIndicatorConfig(
-      period: _currentPeriod,
-      showZones: _currentShowZones,
-      oscillatorLimits: OscillatorLinesConfig(
-        overboughtValue: _currentOverBoughtPrice,
-        oversoldValue: _currentOverSoldPrice,
-      ));
+  WilliamsRIndicatorConfig updateIndicatorConfig() =>
+      (widget.config as WilliamsRIndicatorConfig).copyWith(
+          period: _currentPeriod,
+          showZones: _currentShowZones,
+          oscillatorLimits: OscillatorLinesConfig(
+            overboughtValue: _currentOverBoughtPrice,
+            oversoldValue: _currentOverSoldPrice,
+          ));
 
   @override
   Widget getIndicatorOptions() => Column(

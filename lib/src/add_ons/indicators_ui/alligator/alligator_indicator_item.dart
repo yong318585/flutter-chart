@@ -1,4 +1,4 @@
-import 'package:deriv_chart/deriv_chart.dart';
+import 'package:deriv_chart/generated/l10n.dart';
 import 'package:flutter/material.dart';
 
 import '../callbacks.dart';
@@ -41,7 +41,8 @@ class AlligatorIndicatorItemState
   bool? _showFractal;
 
   @override
-  AlligatorIndicatorConfig createIndicatorConfig() => AlligatorIndicatorConfig(
+  AlligatorIndicatorConfig updateIndicatorConfig() =>
+      (widget.config as AlligatorIndicatorConfig).copyWith(
         jawPeriod: currentJawPeriod,
         jawOffset: currentJawOffset,
         teethPeriod: currentTeethPeriod,
