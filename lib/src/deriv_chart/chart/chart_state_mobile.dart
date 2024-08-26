@@ -241,7 +241,12 @@ class _ChartStateMobile extends _ChartState {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: overlayIndicatorsLabels,
+      children: <Widget>[
+        for (Widget label in overlayIndicatorsLabels)
+          Padding(
+              padding: const EdgeInsets.only(bottom: Dimens.margin04),
+              child: label),
+      ],
     );
   }
 }
