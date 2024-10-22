@@ -1,17 +1,11 @@
 import 'package:collection/collection.dart';
-import 'package:deriv_chart/src/add_ons/drawing_tools_ui/drawing_tool_config.dart';
-import 'package:deriv_chart/src/add_ons/repository.dart';
-import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/chart_series/data_series.dart';
-import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/drawing_tools/drawing_data.dart';
+import 'package:deriv_chart/deriv_chart.dart';
 import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/drawing_tools/drawing_painter.dart';
-import 'package:deriv_chart/src/deriv_chart/chart/data_visualization/drawing_tools/drawing_tool_widget.dart';
-import 'package:deriv_chart/src/deriv_chart/drawing_tool_chart/drawing_tools.dart';
 import 'package:deriv_chart/src/models/chart_config.dart';
-import 'package:deriv_chart/src/models/tick.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-/// A wigdet for encapsulating drawing tools related business logic
+/// A widget for encapsulating drawing tools related business logic
 class DrawingToolChart extends StatefulWidget {
   /// Creates chart that expands to available space.
   const DrawingToolChart({
@@ -77,6 +71,7 @@ class _DrawingToolChartState extends State<DrawingToolChart> {
     final List<DrawingData?> drawings = configs
         .map<DrawingData?>((DrawingToolConfig config) => config.drawingData)
         .toList();
+    final ChartConfig chartConfig = context.watch<ChartConfig>();
 
     return ClipRect(
       child: RepaintBoundary(
@@ -99,6 +94,7 @@ class _DrawingToolChartState extends State<DrawingToolChart> {
                   setIsDrawingSelected: _setIsDrawingSelected,
                   selectedDrawingTool: widget.drawingTools.selectedDrawingTool,
                   series: widget.series,
+                  chartConfig: chartConfig,
                 ),
               ),
             if (widget.drawingTools.selectedDrawingTool != null)
@@ -106,7 +102,7 @@ class _DrawingToolChartState extends State<DrawingToolChart> {
                 onAddDrawing: widget.drawingTools.onAddDrawing,
                 selectedDrawingTool: widget.drawingTools.selectedDrawingTool!,
                 quoteFromCanvasY: widget.chartQuoteFromCanvasY,
-                chartConfig: context.watch<ChartConfig>(),
+                chartConfig: chartConfig,
                 clearDrawingToolSelection:
                     widget.drawingTools.clearDrawingToolSelection,
                 series: widget.series,
