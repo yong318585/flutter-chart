@@ -1,3 +1,7 @@
+## [0.3.4]
+
+* Add LineDrawingMobile, a LineDrawing more suitable for mobile
+
 ## [0.3.2]
 
 * Add horizontal and vertical barriers for selected line drawing tool on the mobile version
